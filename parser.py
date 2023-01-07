@@ -20,14 +20,16 @@ for task in all_tasks:
     r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
     soup = BeautifulSoup(r.text, "lxml")
     number += 1
-    head = soup.find("div", {"class": "pbody"}).get_text()
-    text = soup.find("div", {"class": "probtext"}).get_text()
-    answer = soup.find("div", {"class": "solution"}, id=current_id).get_text()
+    head = soup.find("div", class_="pbody").get_text()
+    text = soup.find("div", class_="probtext").get_text()
+    answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
+    solution = soup.find("div", {"class": "solution"}, id=current_id).get_text()
     content = {
         "number": number,
         "head": head,
         "text": text,
-        "answer": answer
+        "answer": answer,
+        "solution": solution
     }
-
     print(content)
+
