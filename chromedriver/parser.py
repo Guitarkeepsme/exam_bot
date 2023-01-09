@@ -12,6 +12,9 @@ from selenium.webdriver.common.by import By
 user_agent = UserAgent()
 options = webdriver.ChromeOptions()
 options.add_argument(f"user-agent={user_agent.random}")
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--incognito')
+options.add_argument('--headless')
 driver = webdriver.Chrome(
     executable_path="/Users/alexeykashurnikov/PycharmProjects/exam_bot/chromedriver/chromedriver",
     options=options
@@ -19,62 +22,36 @@ driver = webdriver.Chrome(
 all_tasks = []
 url = "https://rus-ege.sdamgia.ru/test?theme=289"
 
-try:
-    xpath = "/html/body/div[1]/div[5]/div[1]/div[4]/div[1]/span[4]"
-    driver.get(url=url)
-    time.sleep(3)
-    wheel = driver.find_element(By.XPATH, xpath)
-    wheel.click()
+xpath = "/html/body/div[1]/div[5]/div[1]/div[4]/div[1]/span[4]"
+driver.get(url=url)
+time.sleep(3)
+wheel = driver.find_element(By.XPATH, xpath)
+wheel.click()
+page_source = driver.page_source
 
-    r = requests.get(url)
+
+soup = BeautifulSoup(page_source, "lxml")
+for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
+    all_tasks.append(task_id.get("id").replace("problem_", ""))
+print(all_tasks)
+number = 0
+for task in all_tasks:
+    current_id = "sol" + str(task)
+    r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
     soup = BeautifulSoup(r.text, "lxml")
-    for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-        all_tasks.append(task_id.get("id").replace("problem_", ""))
-    print(all_tasks)
-    number = 0
-    for task in all_tasks:
-        current_id = "sol" + str(task)
-        r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
-        soup = BeautifulSoup(r.text, "lxml")
-        number += 1
-        head = soup.find("div", class_="pbody").get_text()
-        text = soup.find("div", class_="probtext").get_text()
-        answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-        solution = soup.find("div", {"class": "solution"}, id=current_id).get_text()
-        content = {
-            "number": number,
-            "head": head,
-            "text": text,
-            "answer": answer,
-            "solution": solution
-        }
-        print(content)
-except Exception as ex:
-    print(ex)
-finally:
-    driver.close()
-    driver.quit()
+    number += 1
+    head = soup.find("div", class_="pbody").get_text()
+    text = soup.find("div", class_="probtext").get_text()
+    answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
+    solution = soup.find("div", {"class": "solution"}, id=current_id).get_text()
+    content = {
+        "number": number,
+        "head": head,
+        "text": text,
+        "answer": answer,
+        "solution": solution
+    }
+    print(content)
 
-# r = requests.get(url)
-# soup = BeautifulSoup(r.text, "lxml")
-# for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-#     all_tasks.append(task_id.get("id").replace("problem_", ""))
-# print(all_tasks)
-# number = 0
-# for task in all_tasks:
-#     current_id = "sol" + str(task)
-#     r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
-#     soup = BeautifulSoup(r.text, "lxml")
-#     number += 1
-#     head = soup.find("div", class_="pbody").get_text()
-#     text = soup.find("div", class_="probtext").get_text()
-#     answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-#     solution = soup.find("div", {"class": "solution"}, id=current_id).get_text()
-#     content = {
-#         "number": number,
-#         "head": head,
-#         "text": text,
-#         "answer": answer,
-#         "solution": solution
-#     }
-#     print(content)
+driver.close()
+driver.quit()
