@@ -147,7 +147,7 @@ for task in all_tasks:
         content = {
             "number": number,
             "head": head,
-            # "text": text,
+            "text": text,
             "answer": answer,
             "solution": solution
         }
