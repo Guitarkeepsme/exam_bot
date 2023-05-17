@@ -4,35 +4,40 @@ from selenium import webdriver
 import time
 from fake_useragent import UserAgent
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 # import re
 # import unicodedata
 
-# занести в словарь номер задания, вопрос, текст и ответ
-content = {}
-user_agent = UserAgent()
-options = webdriver.ChromeOptions()
-options.add_argument(f"user-agent={user_agent.random}")
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--incognito')
-options.add_argument('--headless')
-options.add_argument('--disable-blink-features=AutomationControlled')
-driver = webdriver.Chrome(
-    executable_path="/Users/alexeykashurnikov/PycharmProjects/exam_bot/chromedriver/chromedriver",
-    options=options
-)
-all_tasks = []
-selenium_pages = []
-url = "https://rus-ege.sdamgia.ru/test?theme=205"
-number = 0
-task_counter = 0
 
-xpath_1 = f"/html/body/div[1]/div[5]/div[1]/div[4]/div[1]/span[1]"
-driver.get(url=url)
-time.sleep(1)
-wheel = driver.find_element(By.XPATH, xpath_1)
-wheel.click()
-page_source = driver.page_source
-selenium_pages.append(page_source)
+# url_base = "https://rus-ege.sdamgia.ru"
+# url_end = "/test?theme=289"
+# url = url_base + url_end
+# content = {}
+# user_agent = UserAgent()
+# options = webdriver.ChromeOptions()
+# options.add_argument(f"user-agent={user_agent.random}")
+# options.add_argument('--ignore-certificate-errors')
+# options.add_argument('--incognito')
+# options.add_argument('--headless')
+# options.add_argument('--disable-blink-features=AutomationControlled')
+# driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+# driver.get(url)
+# html = driver.page_source
+# all_tasks = []
+# selenium_pages = []
+
+# with open('tasks_text.html', 'w') as file:
+#     file.write(html)
+# number = 0
+# task_counter = 0
+
+# xpath_1 = f"/html/body/div[1]/div[5]/div[1]/div[4]/div[1]/span[1]"
+# driver.get(url=url)
+# time.sleep(1)
+# wheel = driver.find_element(By.XPATH, xpath_1)
+# wheel.click()
+# page_source = driver.page_source
+# selenium_pages.append(page_source)
 
 
 
@@ -110,48 +115,48 @@ selenium_pages.append(page_source)
 
 driver.close()
 driver.quit()
-
-for page in selenium_pages:
-    soup = BeautifulSoup(page, "lxml")
-    for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-        all_tasks.append(task_id.get("id").replace("problem_", ""))
-
-
-for task in all_tasks:
-    if soup.find("div", class_="probtext") is None:
-        current_id = "sol" + str(task)
-        r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
-        soup = BeautifulSoup(r.text, "lxml")
-        number += 1
-        head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-        answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-        solution = soup.find("div", {"class": "solution"},
-                             id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-        content = {
-            "number": number,
-            "head": head,
-            # "text": text,
-            "answer": answer,
-            "solution": solution
-        }
-    else:
-        current_id = "sol" + str(task)
-        r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
-        soup = BeautifulSoup(r.text, "lxml")
-        number += 1
-        head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-        text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
-        answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-        solution = soup.find("div", {"class": "solution"},
-                             id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-        content = {
-            "number": number,
-            "head": head,
-            "text": text,
-            "answer": answer,
-            "solution": solution
-        }
-
-    print(content)
-
-print(all_tasks)
+#
+# for page in selenium_pages:
+#     soup = BeautifulSoup(page, "lxml")
+#     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
+#         all_tasks.append(task_id.get("id").replace("problem_", ""))
+#
+#
+# for task in all_tasks:
+#     if soup.find("div", class_="probtext") is None:
+#         current_id = "sol" + str(task)
+#         r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
+#         soup = BeautifulSoup(r.text, "lxml")
+#         number += 1
+#         head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+#         answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
+#         solution = soup.find("div", {"class": "solution"},
+#                              id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
+#         content = {
+#             "number": number,
+#             "head": head,
+#             # "text": text,
+#             "answer": answer,
+#             "solution": solution
+#         }
+#     else:
+#         current_id = "sol" + str(task)
+#         r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
+#         soup = BeautifulSoup(r.text, "lxml")
+#         number += 1
+#         head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+#         text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
+#         answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
+#         solution = soup.find("div", {"class": "solution"},
+#                              id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
+#         content = {
+#             "number": number,
+#             "head": head,
+#             "text": text,
+#             "answer": answer,
+#             "solution": solution
+#         }
+#
+#     print(content)
+#
+# print(all_tasks)
