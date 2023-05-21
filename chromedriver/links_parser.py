@@ -30,9 +30,9 @@ from bs4 import BeautifulSoup
 
 with open('links_page.html') as file:
     src = file.read()
+soup = BeautifulSoup(src, "lxml")
 
 all_titles = {}
-soup = BeautifulSoup(src, "lxml")
 number = 0
 for task in (soup.find_all("div", {"class": "ConstructorForm-Topic"})):
     title = []
