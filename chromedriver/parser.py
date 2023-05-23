@@ -55,7 +55,9 @@ def parse_task(html):
         all_tasks.append(task_id.get("id").replace("problem_", ""))
     number = 0
     for task in all_tasks:
-        if soup.find("div", class_="probtext") is None:
+        if task.isalpha():
+            continue
+        elif soup.find("div", class_="probtext") is None:
             current_id = "sol" + str(task)
             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
             soup = BeautifulSoup(r.text, "lxml")
@@ -71,8 +73,6 @@ def parse_task(html):
                 "solution": solution
             }
         else:
-            if "Чаще всего в" in soup.find_all("div", class_="pbody"):
-                break
             current_id = "sol" + str(task)
             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
             soup = BeautifulSoup(r.text, "lxml")
@@ -94,7 +94,7 @@ def parse_task(html):
     pass
 
 
-with open('test.html') as file:
+with open('test_2.html') as file:
     src = file.read()
 
 
