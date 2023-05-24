@@ -1,14 +1,18 @@
 from bs4 import BeautifulSoup
 import requests
+# import re
 from selenium import webdriver
 from fake_useragent import UserAgent
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
+with open("tasks_links.json") as file:
+    urls = file.read()
 
 url_base = "https://rus-ege.sdamgia.ru"
 url_end = "/test?theme=341"
+# url_end = urls.
 url_all = url_base + url_end
 
 
@@ -16,13 +20,12 @@ def get_source_html(url):
     user_agent = UserAgent()
     options = webdriver.ChromeOptions()
     options.add_argument(f"user-agent={user_agent.random}")
-    # options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-certificate-errors')
     # options.add_argument('--incognito')
     # options.add_argument('--headless')
     # options.add_argument('--disable-blink-features=AutomationControlled')
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
     driver.maximize_window()
-    # html = driver.page_source
     try:
         driver.get(url=url)
         time.sleep(3)
@@ -57,7 +60,13 @@ def parse_task(html):
     for task in all_tasks:
         if task.isalpha():
             continue
-        elif soup.find("div", class_="probtext") is None:
+        # elif soup.find(re.compile("https://rus-ege.sdamgia.ru/handbook?id=297c")):
+        #     break
+        # if soup.find("img", class_="tex", src_="/img/printer.png"):
+        #     break
+        # for href in soup.find(re.compile("/img/printer.png")):
+        #     print(href)
+        if soup.find("div", class_="probtext") is None:
             current_id = "sol" + str(task)
             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(task))
             soup = BeautifulSoup(r.text, "lxml")
@@ -78,6 +87,8 @@ def parse_task(html):
             soup = BeautifulSoup(r.text, "lxml")
             number += 1
             head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+            if len(head) > 150:
+                continue
             text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
             answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
             solution = soup.find("div", {"class": "solution"},
@@ -89,12 +100,11 @@ def parse_task(html):
                 "answer": answer,
                 "solution": solution
             }
-
         print(content)
     pass
 
 
-with open('test_2.html') as file:
+with open('test.html') as file:
     src = file.read()
 
 
