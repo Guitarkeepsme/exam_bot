@@ -47,9 +47,9 @@ for task in (soup.find_all("div", {"class": "ConstructorForm-Topic"})):
     if "Задания, не" in task.text:
         break
     if task_title:
-        all_titles[number] = {"title": "".join(title), "links": links}
+        all_titles.update({number: tuple(links)})
 
-        with open("tasks_links.json", "w") as file:
+        with open("tasks_links_3.json", "w") as file:
             json.dump(all_titles, file, indent=4, ensure_ascii=False)
 print(all_titles)
 # print(tasks_titles)
