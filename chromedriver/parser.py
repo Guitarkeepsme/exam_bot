@@ -19,7 +19,7 @@ def parse_task(html):
     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
         all_ids.append(task_id.get("id").replace("problem_", ""))
         time.sleep(1)  # ждём секунду, чтобы не забанили
-    number = 0
+    number = 0         # счётчик примеров конкретного задания
     for id in all_ids:
         time.sleep(2)
         if soup.find("div", class_="probtext") is None:
