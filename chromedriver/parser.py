@@ -10,15 +10,15 @@ import time
 
 class TaskNumber:
     task_number = 4
-    all_tasks = []
 
 
 def parse_task(html):
-    all_ids = []
+    all_tasks = []     # здесь будут храниться вся полученная инфа
+    all_ids = []       # для удобства создал отдельный список айдишников
     soup = BeautifulSoup(html, "lxml")
     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
         all_ids.append(task_id.get("id").replace("problem_", ""))
-        time.sleep(1)
+        time.sleep(1)  # ждём секунду, чтобы не забанили
     number = 0
     for id in all_ids:
         time.sleep(2)
@@ -28,7 +28,7 @@ def parse_task(html):
             soup = BeautifulSoup(r.text, "lxml")
             number += 1
             head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-            if len(head) > 500:
+            if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
                 continue
             answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
             solution = soup.find("div", {"class": "solution"},
@@ -36,10 +36,10 @@ def parse_task(html):
             content = {
                 "number": number,
                 "head": head,
-                "answer": answer,
-                "solution": solution
+                "answer": answer,     # нужно убрать слово "Ответ"
+                "solution": solution  # нужно убрать слово "Пояснение"
             }
-            TaskNumber.all_tasks.append(content)
+            all_tasks.append(content)
         else:
             current_id = "sol" + str(id)
             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(id))
@@ -56,12 +56,12 @@ def parse_task(html):
                 "number": number,
                 "head": head,
                 "text": text,
-                "answer": answer,
-                "solution": solution
+                "answer": answer,  # нужно убрать слово "Ответ"
+                "solution": solution  # нужно убрать слово "Пояснение"
             }
-            TaskNumber.all_tasks.append(content)
+            all_tasks.append(content)
     with open(f"russian_task{TaskNumber.task_number}.json", "w") as file:
-        json.dump(TaskNumber.all_tasks, file, indent=4, ensure_ascii=False)
+        json.dump(all_tasks, file, indent=4, ensure_ascii=False)  # закидываем всё в отдельный файл
 
 
 def get_source_html(url):
@@ -78,7 +78,6 @@ def get_source_html(url):
         driver.get(url=url)
         time.sleep(3)
         while True:
-            # find_more_element = driver.find_element(By.CLASS_NAME, "pager_page")
 
             parse_task(driver.page_source)
 
@@ -86,7 +85,7 @@ def get_source_html(url):
             #     file.write(driver.page_source)
 
             if "Пройти тестирование" in driver.find_elements(By.LINK_TEXT, "a"):
-                break
+                break  # ЭТО НАДО ПОДПРАВИТЬ СРОЧНО
             else:
                 scroll_value = 1000
                 scroll_by = f'window.scrollBy(0, {scroll_value});'
@@ -110,10 +109,10 @@ with open("tasks_links_2.json") as file:
 
 
 def get_info(links):
-    while TaskNumber.task_number <= 4:
+    while TaskNumber.task_number <= 4:  # проходим по всей длине списка ссылок
+        url_base = "https://rus-ege.sdamgia.ru"
         for task in links.get(str(TaskNumber.task_number)):
-            url_base = "https://rus-ege.sdamgia.ru"
-            get_source_html(url=url_base + task)
+            get_source_html(url_base + task)  # забираем каждую ссылку из списка по заданиям
         TaskNumber.task_number += 1
 
 
@@ -127,5 +126,3 @@ if __name__ == "__main__":
 
 # dict_task_links = json.loads(tasks_links)
 # print(dict_task_links)
-
-
