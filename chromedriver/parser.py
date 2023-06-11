@@ -3,14 +3,13 @@ import requests
 import json
 from selenium import webdriver
 from fake_useragent import UserAgent
-from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 
 # ПОСЛЕ ДОЛГИХ МЫТАРСТВ РЕШИЛ СДЕЛАТЬ ПАРСИНГ ТАКИМ:
 # Сначала проходим по странице и парсим айдишники заданий, избегая повторов
-# Затем проходим ещё раз, парсим уже сами задания
+# Затем проходим ещё раз, парсим уже сами задания без использования Селениума
 # Здесь вырисовывается две проблемы: во-первых, два прохода делать не хотелось бы, а во-вторых,
 # пока не понятно, как я буду очищать список, если прошёл все задания
 # может быть, сначала загрузить в файл айдишники, а потом уже парсить информацию?
@@ -18,144 +17,67 @@ import time
 
 class TaskNumber:
     task_number = 1
-    # example_number = 0    # счётчик номеров конкретного задания
-    all_ids = []
-    all_tasks = []  # здесь будет храниться вся полученная инфа. Создал класс, чтобы работать с ней внутри всех функций
-    # all_tasks_set = set(all_tasks)
+    example_number = 0    # счётчик номеров конкретного задания
 
 
 ids = {}
-result_links = []  # сохраняем ссылки, вернее айдишники, в списке
+current_ids = []  # сохраняем айдишники конкретного задания, чтобы потом внести их в словарь
 
 
 def parse_id(html):
     soup = BeautifulSoup(html, "lxml")
     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
         result = task_id.get("id").replace("problem_", "")
-        if result not in result_links:
-            result_links.append(result)
+        if result not in current_ids:
+            current_ids.append(result)
 
 
-# def parse_task(html):
-#     soup = BeautifulSoup(html, "lxml")
-#     example_number = 0    # счётчик номеров конкретного задания
-#     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-#         result = task_id.get("id").replace("problem_", "")
-#         if result not in ids:
-#             ids.append(result)
-#     for t_id in ids:
-#         print(t_id)
-#         # if soup.find("div", class_="probtext") is None:
-#         current_id = "sol" + str(t_id)
-#         r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(current_id))
-#         soup_2 = BeautifulSoup(r.text, "lxml")
-#         print(soup_2)
-#         example_number += 1
-#         # TaskNumber.example_number += 1
-#         head = soup_2.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#         if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
-#             continue
-#         answer = soup_2.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-#         solution = soup_2.find("div", {"class": "solution"},
-#                              id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-#         content = {
-#             "number": example_number,
-#             # "number": TaskNumber.example_number,
-#             "head": head,
-#             "answer": answer,  # нужно убрать слово "Ответ"
-#             "solution": solution  # нужно убрать слово "Пояснение"
-#         }
-#         TaskNumber.all_tasks.append(content)
-#         # else:
-#         # current_id = "sol" + str(t_id)
-#         # r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(current_id))
-#         # soup_2 = BeautifulSoup(r.text, "lxml")
-#         # example_number += 1
-#         # # TaskNumber.example_number += 1
-#         # head = soup_2.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#         # if len(head) > 500:
-#         #     continue
-#         # text = soup_2.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#         # answer = soup_2.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-#         # solution = soup_2.find("div", {"class": "solution"},
-#         #                      id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-#         # content = {
-#         #     "number": example_number,
-#         #     # "number": TaskNumber.example_number,
-#         #     "head": head,
-#         #     "text": text,
-#         #     "answer": answer,  # нужно убрать слово "Ответ"
-#         #     "solution": solution  # нужно убрать слово "Пояснение"
-#         # }
-#         # TaskNumber.all_tasks.append(content)
-#         with open(f"russian_task{TaskNumber.task_number}.json", "a") as file:
-#             json.dump(TaskNumber.all_tasks, file, indent=4,
-#                       ensure_ascii=False)  # закидываем всё в отдельный файл
+task_content = []  # собираем контент всех примеров конкретного задания
+all_tasks_content = {}  # собираем все задания в один словарь, чтобы потом сохранить его
 
 
-# def parse_task(html):
-#     all_ids = []  # для удобства создал отдельный список айдишников
-#     soup = BeautifulSoup(html, "lxml")
-#     example_number = 0    # счётчик номеров конкретного задания
-#     # for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-#     #     result = task_id.get("id").replace("problem_", "")
-#     #     if result not in TaskNumber.all_tasks:
-#     #         TaskNumber.all_ids.append(result)
-#     #     elif len(TaskNumber.all_tasks) > 10:
-#     #         break
-#     for task_id in soup.find_all("div", {"class": "problem_container"}, id=True):
-#         result = task_id.get("id").replace("problem_", "")
-#         if result not in test_all:
-#             test_all.append(result)
-#     #     elif len(test_all) > 10:
-#     #         break
-#     for t_id in TaskNumber.all_ids:
-#         # time.sleep(1)
-#         if soup.find("div", class_="probtext") is None:
-#             current_id = "sol" + str(t_id)
-#             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(t_id))
-#             soup = BeautifulSoup(r.text, "lxml")
-#             example_number += 1
-#             # TaskNumber.example_number += 1
-#             head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#             if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
-#                 continue
-#             answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-#             solution = soup.find("div", {"class": "solution"},
-#                                  id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-#             content = {
-#                 "number": example_number,
-#                 # "number": TaskNumber.example_number,
-#                 "head": head,
-#                 "answer": answer,  # нужно убрать слово "Ответ"
-#                 "solution": solution  # нужно убрать слово "Пояснение"
-#             }
-#             TaskNumber.all_tasks.append(content)
-#         else:
-#             current_id = "sol" + str(t_id)
-#             r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(t_id))
-#             soup = BeautifulSoup(r.text, "lxml")
-#             example_number += 1
-#             # TaskNumber.example_number += 1
-#             head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#             if len(head) > 500:
-#                 continue
-#             text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
-#             answer = soup.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-#             solution = soup.find("div", {"class": "solution"},
-#                                  id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-#             content = {
-#                 "number": example_number,
-#                 # "number": TaskNumber.example_number,
-#                 "head": head,
-#                 "text": text,
-#                 "answer": answer,  # нужно убрать слово "Ответ"
-#                 "solution": solution  # нужно убрать слово "Пояснение"
-#             }
-#             TaskNumber.all_tasks.append(content)
-#             with open(f"russian_task{TaskNumber.task_number}.json", "a") as file:
-#                 json.dump(TaskNumber.all_tasks, file, indent=4,
-#                           ensure_ascii=False)  # закидываем всё в отдельный файл
+def parse_task(html):
+    r = requests.get(html)
+    soup = BeautifulSoup(r.text, "lxml")
+    # if soup.find("div", class_="probtext") is None:
+    TaskNumber.example_number += 1
+    head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+    if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
+        return None
+    text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
+    answer = soup.find("div", class_="solution").find_next_sibling().get_text()
+    solution = soup.find("div", {"class": "solution"}).get_text().replace("\u202f", " ").replace("\xa0", " ")
+    content = {
+        "number": TaskNumber.example_number,
+        "head": head,
+        "text": text,
+        "answer": answer,  # нужно убрать слово "Ответ"
+        "solution": solution  # нужно убрать слово "Пояснение"
+    }
+    task_content.append(content)
+    print(content)
+    # else:
+    # current_id = "sol" + str(t_id)
+    # r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(current_id))
+    # soup_2 = BeautifulSoup(r.text, "lxml")
+    # example_number += 1
+    # # TaskNumber.example_number += 1
+    # head = soup_2.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+    # if len(head) > 500:
+    #     continue
+    # text = soup_2.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
+    # answer = soup_2.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
+    # solution = soup_2.find("div", {"class": "solution"},
+    #                      id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
+    # content = {
+    #     "number": example_number,
+    #     # "number": TaskNumber.example_number,
+    #     "head": head,
+    #     "text": text,
+    #     "answer": answer,  # нужно убрать слово "Ответ"
+    #     "solution": solution  # нужно убрать слово "Пояснение"
+    # }
+    # TaskNumber.all_tasks.append(content)
 
 
 def get_source_html(url):
@@ -168,38 +90,23 @@ def get_source_html(url):
         driver.get(url=url)
         time.sleep(2)
         reached_page_end = False  # для того, чтоб дойти до конца страницы, создаём переменную
-        last_height = driver.execute_script("return document.body.scrollHeight")  # запоминаем высоту
+        last_height = driver.execute_script("return document.body.scrollHeight")  # запоминаем высоту скролла
         print(last_height)
         while not reached_page_end:
             time.sleep(2)
             parse_id(driver.page_source)
-            scroll_value = 1500
+            scroll_value = 1000
             scroll_by = f'window.scrollBy(0, {scroll_value});'
             driver.execute_script(scroll_by)
-            time.sleep(1)
+            time.sleep(2)
+            driver.execute_script(scroll_by)
             new_height = driver.execute_script("return document.body.scrollHeight")  # берём новые данные о высоте
             print(new_height)
-            if last_height == new_height or last_height > 10000:  # проверяем, переместились ли мы вниз, и если нет, то
+            if last_height == new_height:  # проверяем, переместились ли мы до конца
+                print("Конец страницы?")
                 reached_page_end = True    # заканчиваем
             else:                          # иначе меняем показатель высоты и продолжаем
                 last_height = new_height
-            print(result_links)
-            # if int(soup.find("div", class_="prob_num").get_text()) == len(TaskNumber.all_tasks):
-            # actions = ActionChains(driver)
-            # print(test_all)
-            # print(TaskNumber.all_ids)
-            # parse_task(driver.page_source)
-            # element = driver.find_element(By.CSS_SELECTOR, "div.prob_num")
-            # if int(element.text) == 10:
-            #     with open(f"russian_task{TaskNumber.task_number}.json", "a") as file:
-            #         json.dump(TaskNumber.all_tasks, file, indent=4,
-            #                   ensure_ascii=False)  # закидываем всё в отдельный файл
-            #     break
-            # with open("test_2.html", "w") as file:
-            #     file.write(driver.page_source)
-
-            # actions.move_to_element(element)
-
     except Exception as _ex:
         print(_ex)
     finally:
@@ -211,26 +118,45 @@ def get_source_html(url):
 #     src = file.read()
 
 
-with open("tasks_links_2.json") as file:
-    tasks_links = json.load(file)
+with open("tasks_links_2.json") as links_file:  # открываем файл с ссылками
+    tasks_links = json.load(links_file)
+
+
+with open("ids.json") as id_file:  # открываем файл с ссылками
+    ids_f = json.load(id_file)
 
 
 def get_ids(links):
     url_base = "https://rus-ege.sdamgia.ru"
-    while TaskNumber.task_number <= 2:  # проходим по всей длине списка ссылок (пока тестово только 2 номера)
+    while TaskNumber.task_number <= len(tasks_links):  # проходим по всей длине списка ссылок
         for task in links.get(str(TaskNumber.task_number)):
             get_source_html(url_base + task)  # забираем каждую ссылку из списка по заданиям
-        ids.update({TaskNumber.task_number: tuple(result_links)})  # сохраняем ссылки именно тут, чтобы не обновлялся
-        # словарь слишком рано
-        result_links.clear()  # очищаем список, чтобы айдишники предыдущего задания не попали в следующее
+        ids.update({TaskNumber.task_number: tuple(current_ids)})  # сохраняем айдишники именно на этом этапе,
+        # чтобы словарь не обновлялся слишком рано
+        current_ids.clear()  # очищаем список, чтобы айдишники предыдущего задания не попали в следующее
         print(ids)
         TaskNumber.task_number += 1  # переходим к следующему заданию
     with open("ids.json", "w") as ids_file:
         json.dump(ids, ids_file, indent=4, ensure_ascii=False)
 
 
+def get_tasks(task_ids):
+    url_base = "https://rus-ege.sdamgia.ru/problem?id="
+    while TaskNumber.task_number <= len(tasks_links):
+        for task_id in task_ids.get(str(TaskNumber.task_number)):
+            parse_task(url_base + str(task_id))
+        all_tasks_content.update({TaskNumber.task_number: tuple(task_content)})
+        task_content.clear()  # очищаем всё, что собрали по предыдущему заданию, чтобы это не шло на следующее
+        print(all_tasks_content)
+        TaskNumber.task_number += 1
+    with open("russian_content.json", "w") as content_file:
+        json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
+
+
 def main():
-    get_ids(tasks_links)
+    get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
+    TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по ним заново
+    get_tasks(ids_f)
     # get_source_html(test_url)
 
 
