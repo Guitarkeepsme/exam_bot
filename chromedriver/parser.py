@@ -15,11 +15,20 @@ import time
 # может быть, сначала загрузить в файл айдишники, а потом уже парсить информацию?
 
 
+with open("tasks_links_2.json") as links_file:  # открываем файл с ссылками
+    tasks_links = json.load(links_file)
+
+
+with open("ids.json") as id_file:  # открываем файл с ссылками
+    ids_f = json.load(id_file)
+
+
 class TaskNumber:
     task_number = 1
     example_number = 0    # счётчик номеров конкретного задания
 
 
+# переменные для всех функций
 ids = {}
 current_ids = []  # сохраняем айдишники конкретного задания, чтобы потом внести их в словарь
 
@@ -56,28 +65,6 @@ def parse_task(html):
     }
     task_content.append(content)
     print(content)
-    # else:
-    # current_id = "sol" + str(t_id)
-    # r = requests.get("https://rus-ege.sdamgia.ru/problem?id=" + str(current_id))
-    # soup_2 = BeautifulSoup(r.text, "lxml")
-    # example_number += 1
-    # # TaskNumber.example_number += 1
-    # head = soup_2.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
-    # if len(head) > 500:
-    #     continue
-    # text = soup_2.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
-    # answer = soup_2.find("div", class_="solution", id=current_id).find_next_sibling().get_text()
-    # solution = soup_2.find("div", {"class": "solution"},
-    #                      id=current_id).get_text().replace("\u202f", " ").replace("\xa0", " ")
-    # content = {
-    #     "number": example_number,
-    #     # "number": TaskNumber.example_number,
-    #     "head": head,
-    #     "text": text,
-    #     "answer": answer,  # нужно убрать слово "Ответ"
-    #     "solution": solution  # нужно убрать слово "Пояснение"
-    # }
-    # TaskNumber.all_tasks.append(content)
 
 
 def get_source_html(url):
@@ -91,7 +78,6 @@ def get_source_html(url):
         time.sleep(2)
         reached_page_end = False  # для того, чтоб дойти до конца страницы, создаём переменную
         last_height = driver.execute_script("return document.body.scrollHeight")  # запоминаем высоту скролла
-        print(last_height)
         while not reached_page_end:
             time.sleep(2)
             parse_id(driver.page_source)
@@ -101,8 +87,7 @@ def get_source_html(url):
             time.sleep(2)
             driver.execute_script(scroll_by)
             new_height = driver.execute_script("return document.body.scrollHeight")  # берём новые данные о высоте
-            print(new_height)
-            if last_height == new_height:  # проверяем, переместились ли мы до конца
+            if last_height == new_height or last_height > 5000:  # проверяем, переместились ли мы до конца
                 print("Конец страницы?")
                 reached_page_end = True    # заканчиваем
             else:                          # иначе меняем показатель высоты и продолжаем
@@ -114,28 +99,22 @@ def get_source_html(url):
         driver.quit()
 
 
-# with open('test.html') as file:
-#     src = file.read()
-
-
-with open("tasks_links_2.json") as links_file:  # открываем файл с ссылками
-    tasks_links = json.load(links_file)
-
-
-with open("ids.json") as id_file:  # открываем файл с ссылками
-    ids_f = json.load(id_file)
-
-
 def get_ids(links):
+    id_iteration_count = len(tasks_links)
+    print(f"Всего заданий: {id_iteration_count}")
     url_base = "https://rus-ege.sdamgia.ru"
     while TaskNumber.task_number <= len(tasks_links):  # проходим по всей длине списка ссылок
         for task in links.get(str(TaskNumber.task_number)):
             get_source_html(url_base + task)  # забираем каждую ссылку из списка по заданиям
         ids.update({TaskNumber.task_number: tuple(current_ids)})  # сохраняем айдишники именно на этом этапе,
         # чтобы словарь не обновлялся слишком рано
-        current_ids.clear()  # очищаем список, чтобы айдишники предыдущего задания не попали в следующее
         print(ids)
+        id_iteration_count -= 1
+        print(f"Страница №{TaskNumber.task_number} пройдена, осталось страниц: {id_iteration_count}. "
+              f"Количество примеров этого задания: {len(current_ids)}")
+        current_ids.clear()  # очищаем список, чтобы айдишники предыдущего задания не попали в следующее
         TaskNumber.task_number += 1  # переходим к следующему заданию
+    print("Все ссылки на задания собраны!")
     with open("ids.json", "w") as ids_file:
         json.dump(ids, ids_file, indent=4, ensure_ascii=False)
 
@@ -149,6 +128,8 @@ def get_tasks(task_ids):
         task_content.clear()  # очищаем всё, что собрали по предыдущему заданию, чтобы это не шло на следующее
         print(all_tasks_content)
         TaskNumber.task_number += 1
+        if TaskNumber.task_number == len(tasks_links):
+            break  # принудительно останавливаем цикл, когда дошли до последнего задания
     with open("russian_content.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
@@ -157,11 +138,7 @@ def main():
     get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
     TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по ним заново
     get_tasks(ids_f)
-    # get_source_html(test_url)
 
 
 if __name__ == "__main__":
     main()
-
-# dict_task_links = json.loads(tasks_links)
-# print(dict_task_links)
