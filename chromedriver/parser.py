@@ -137,7 +137,7 @@ def get_tasks(task_ids):
 def main():
     get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
     TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по ним заново
-    get_tasks(ids_f)
+    # get_tasks(ids_f)
 
 
 if __name__ == "__main__":
