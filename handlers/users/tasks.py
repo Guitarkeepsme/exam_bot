@@ -21,7 +21,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="maths")
+@dp.callback_query_handler(text_contains="math")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -31,7 +31,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="")
+@dp.callback_query_handler(text_contains="social")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -41,7 +41,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="biology")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -51,7 +51,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="physics")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -61,7 +61,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="computer")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -71,7 +71,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="history")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -81,7 +81,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="foreign")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -91,7 +91,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="chemistry")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -101,7 +101,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="literature")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
@@ -111,17 +111,7 @@ async def choosing_russian(call: CallbackQuery):
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text_contains="russian")
-async def choosing_russian(call: CallbackQuery):
-    await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Этот раздел пока *в разработке*. Вы можете готовиться к другим предметам.",
-                              parse_mode="Markdown")
-
-
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="geography")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
