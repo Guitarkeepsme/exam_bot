@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from keyboards.inline.callback_data import russian_main_callback
+from keyboards.inline.callback_data import russian_main_callback, rus_task_callback
 
 
 rus_start = InlineKeyboardMarkup(
@@ -9,16 +9,54 @@ rus_start = InlineKeyboardMarkup(
                                  callback_data=russian_main_callback.new(option='rus_test'))
         ],
         [
-            InlineKeyboardButton(text="Отработать конкретное задание",
-                                 callback_data=russian_main_callback.new(option='rus_task'))
+            InlineKeyboardButton(text="Отработать конкретное задание", callback_data='choose:rus_tasks')
         ],
         [
-            InlineKeyboardButton(text="Посмотреть статистику по этому предмету",
-                                 callback_data=russian_main_callback.new(option='rus_stats'))
-        ],
-        [
-            InlineKeyboardButton(text="Назад",
-                                 callback_data=russian_main_callback.new(option='back'))
+            InlineKeyboardButton(text="Посмотреть статистику по этому предмету", callback_data='choose:rus_stats')
         ]
+    ]
+)
+rus_task = InlineKeyboardMarkup(row_width=7)
+task_1 = InlineKeyboardButton(text="1", callback_data=rus_task_callback.new(task="rus_task_1"))
+task_2 = InlineKeyboardButton(text="2", callback_data=rus_task_callback.new(task="rus_task_2"))
+task_3 = InlineKeyboardButton(text="3", callback_data=rus_task_callback.new(task="rus_task_3"))
+task_4 = InlineKeyboardButton(text="4", callback_data=rus_task_callback.new(task="rus_task_4"))
+task_5 = InlineKeyboardButton(text="5", callback_data=rus_task_callback.new(task="rus_task_5"))
+task_6 = InlineKeyboardButton(text="6", callback_data=rus_task_callback.new(task="rus_task_6"))
+task_7 = InlineKeyboardButton(text="7", callback_data=rus_task_callback.new(task="rus_task_7"))
+task_8 = InlineKeyboardButton(text="8", callback_data=rus_task_callback.new(task="rus_task_8"))
+task_9 = InlineKeyboardButton(text="9", callback_data=rus_task_callback.new(task="rus_task_9"))
+task_10 = InlineKeyboardButton(text="10", callback_data=rus_task_callback.new(task="rus_task_10"))
+task_11 = InlineKeyboardButton(text="11", callback_data=rus_task_callback.new(task="rus_task_11"))
+task_12 = InlineKeyboardButton(text="12", callback_data=rus_task_callback.new(task="rus_task_12"))
+task_13 = InlineKeyboardButton(text="13", callback_data=rus_task_callback.new(task="rus_task_13"))
+task_14 = InlineKeyboardButton(text="14", callback_data=rus_task_callback.new(task="rus_task_14"))
+task_15 = InlineKeyboardButton(text="15", callback_data=rus_task_callback.new(task="rus_task_15"))
+task_16 = InlineKeyboardButton(text="16", callback_data=rus_task_callback.new(task="rus_task_16"))
+task_17 = InlineKeyboardButton(text="17", callback_data=rus_task_callback.new(task="rus_task_17"))
+task_18 = InlineKeyboardButton(text="18", callback_data=rus_task_callback.new(task="rus_task_18"))
+task_19 = InlineKeyboardButton(text="19", callback_data=rus_task_callback.new(task="rus_task_19"))
+task_20 = InlineKeyboardButton(text="20", callback_data=rus_task_callback.new(task="rus_task_20"))
+task_21 = InlineKeyboardButton(text="21", callback_data=rus_task_callback.new(task="rus_task_21"))
+task_22 = InlineKeyboardButton(text="22", callback_data=rus_task_callback.new(task="rus_task_22"))
+task_23 = InlineKeyboardButton(text="23", callback_data=rus_task_callback.new(task="rus_task_23"))
+task_24 = InlineKeyboardButton(text="24", callback_data=rus_task_callback.new(task="rus_task_24"))
+task_25 = InlineKeyboardButton(text="25", callback_data=rus_task_callback.new(task="rus_task_25"))
+task_26 = InlineKeyboardButton(text="26", callback_data=rus_task_callback.new(task="rus_task_26"))
+task_27 = InlineKeyboardButton(text="27 (Сочинение)", callback_data=rus_task_callback.new(task="rus_task_27_essay"))
+rus_task.add(task_1, task_2, task_3, task_4, task_5, task_6, task_7, task_8, task_9, task_10, task_11, task_12,
+             task_13, task_14, task_15, task_16, task_17, task_18, task_19, task_20, task_21)
+rus_task.row(task_22, task_23, task_24, task_25, task_26)
+rus_task.add(task_27)
+
+rus_task1 = InlineKeyboardMarkup(
+    inline_keyboard=[
+        InlineKeyboardButton(text="1", callback_data=rus_task_callback.new(task="rus_task_1")),
+        # InlineKeyboardButton(text="2", callback_data=rus_task_callback.new(task="rus_task_2")),
+        # InlineKeyboardButton(text="3", callback_data=rus_task_callback.new(task="rus_task_3")),
+        # InlineKeyboardButton(text="4", callback_data=rus_task_callback.new(task="rus_task_4")),
+        # InlineKeyboardButton(text="5", callback_data=rus_task_callback.new(task="rus_task_5")),
+        # InlineKeyboardButton(text="6", callback_data=rus_task_callback.new(task="rus_task_6")),
+        # InlineKeyboardButton(text="7", callback_data=rus_task_callback.new(task="rus_task_7")),
     ]
 )

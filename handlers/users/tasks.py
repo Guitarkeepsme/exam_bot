@@ -1,7 +1,7 @@
 import logging
 
 from keyboards.inline.choise_buttons import choice
-from keyboards.inline.subjects.russian import rus_start
+from keyboards.inline.subjects.russian import rus_start, rus_task
 from loader import dp, Forms, FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message, CallbackQuery
@@ -17,8 +17,15 @@ async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
     logging.info(f"call = {callback_data}")
+    await call.message.answer(text="Выберите дальнейшее действие", reply_markup=rus_start)
 
-    await call.message.answer(text="Выберите дальнейшее действие:", reply_markup=rus_start)
+
+@dp.callback_query_handler(text_contains="rus_tasks")
+async def russian_task(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+    await call.message.answer(text="Выберите *номер задания*", reply_markup=rus_task, parse_mode="Markdown")
 
 
 @dp.callback_query_handler(text_contains="math")
@@ -126,13 +133,10 @@ async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
     logging.info(f"call = {callback_data}")
-
     await call.message.answer("Личный кабинет *в разработке*. Вы можете выбрать один из доступных предметов.",
                               parse_mode="Markdown")
 
 
-@dp.callback_query_handler(text="back")
-async def getting_back(call: CallbackQuery):
-    await Forms.start.set()
-    await call.message.answer("Хорошо, начнём сначала", reply_markup=choice)
-
+# @dp.callback_query_handler(text="back")
+# async def getting_back(message: Message):
+#     await message.answer("Хорошо, начнём сначала. Выберите предмет:", reply_markup=choice)
