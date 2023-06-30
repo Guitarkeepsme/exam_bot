@@ -2,6 +2,7 @@ import logging
 
 from keyboards.inline.choise_buttons import choice
 from keyboards.inline.subjects.russian import rus_start, rus_task
+from keyboards.inline import callback_data
 from loader import dp, Forms, FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message, CallbackQuery
@@ -21,11 +22,20 @@ async def choosing_russian(call: CallbackQuery):
 
 
 @dp.callback_query_handler(text_contains="rus_tasks")
-async def russian_task(call: CallbackQuery):
+async def russian_task_choosing(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data = call.data
     logging.info(f"call = {callback_data}")
     await call.message.answer(text="Выберите *номер задания*", reply_markup=rus_task, parse_mode="Markdown")
+
+
+@dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"))
+async def russian_task(call: CallbackQuery, callback_data: dict):
+    await call.answer(cache_time=60)
+    logging.info(f"call = {callback_data}")
+    number = callback_data.get("number")
+    await call.message.answer(text="Минутку, скоро эта функция будет готова, и вы сможете подготовиться к заданию "
+                                   "номер " + "*" + str(number) + "*", parse_mode="Markdown")
 
 
 @dp.callback_query_handler(text_contains="math")
