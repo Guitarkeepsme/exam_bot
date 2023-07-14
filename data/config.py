@@ -4,7 +4,7 @@ test = {1: "кот", 2: "жмых"}
 test_2 = {1: ('/test?theme=289', '/test?theme=354'),
           2: ('/test?theme=342', '/test?theme=355'), 3: ('/test?theme=258', '/test?theme=356')}
 answer = []
-with open("tasks_links_2.json") as file:
+with open("russian/tasks_links.json") as file:
     tasks_links = json.load(file)
 
 

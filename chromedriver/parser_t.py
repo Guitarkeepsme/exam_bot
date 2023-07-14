@@ -11,7 +11,12 @@ subject = 'rus'
 request = 'задание 1'
 
 
-print(sdamgia.get_catalog(subject=subject))
+# print(sdamgia.get_catalog(subject=subject))
 # # print(sdamgia.get_problem_by_id(subject=subject, id=7))
 # print(sdamgia.get_category_by_id(subject=subject, categoryid='354'))
-print(sdamgia.get_problem_by_id(subject=subject, id='38778').get('condition').get('text'))
+problem = sdamgia.get_problem_by_id(subject=subject, id='38799')
+result = {}
+result.update(problem.items())
+# print(problem.get('solution'))
+print(problem)
+# print(sdamgia.get_problem_by_id(subject=subject, id='38778').get('solution').get('text'))
