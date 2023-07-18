@@ -51,7 +51,6 @@ def parse_task(html):
     soup = BeautifulSoup(r.text, "lxml")
     TaskNumber.example_number += 1
     current_task_id = getting_id(html)
-    print(current_task_id)
     head = soup.find("div", class_="pbody")
     if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
         return None
@@ -74,12 +73,22 @@ def parse_task(html):
         solution_soup.div.unwrap()
         solution_soup.span.unwrap()  # вручную убираем все тэги див, чтобы остались b и p
     content = {
-        "id": current_task_id,
-        "head": head_soup,
-        "text": text_soup,
-        "answer": answer_soup,  # нужно убрать слово "Ответ"
-        "solution": solution_soup  # нужно убрать слово "Пояснение"
+        "id": str(current_task_id),
+        "head": str(head_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
+                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " "),
+        "text": str(text_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
+                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " "),
+        "answer": str(answer_soup).replace("Ответ: ", "").replace(" class=\"left_margin\"></p><b><!--rule_info--", "")
+                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+                                  .replace("</p>", ""),
+        "solution": str(solution_soup).replace("Пояснение", "").replace(" class=\"left_margin\"", "")
+                                      .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
+                                      .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+                                      .replace("<!--rule_info-->", "")
     }
+    # сделаю небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
+    # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем мне это будет необходимо,
+    # чтобы форматировать сообщения, отправляемые ботом
     task_content.append(content)
     print(content)
 
