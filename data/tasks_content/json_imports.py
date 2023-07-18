@@ -1,4 +1,11 @@
 import json
+import os
 
-with open('russian_content.json') as russian_content:
-    russian_data = json.load(russian_content)
+
+working_directory = os.getcwd()
+rus_path = working_directory + '/data/tasks_content/russian_content.json'
+
+with open(rus_path) as rus_data:
+    rus_content = json.load(rus_data)
+
+

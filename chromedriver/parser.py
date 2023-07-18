@@ -5,6 +5,7 @@ from selenium import webdriver
 from fake_useragent import UserAgent
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+from loader import getting_id
 
 
 # ПОСЛЕ ДОЛГИХ МЫТАРСТВ РЕШИЛ СДЕЛАТЬ ПАРСИНГ ТАКИМ:
@@ -48,20 +49,36 @@ all_tasks_content = {}  # собираем все задания в один с�
 def parse_task(html):
     r = requests.get(html)
     soup = BeautifulSoup(r.text, "lxml")
-    # if soup.find("div", class_="probtext") is None:
     TaskNumber.example_number += 1
-    head = soup.find("div", class_="pbody").get_text().replace("\u202f", " ").replace("\xa0", " ")
+    current_task_id = getting_id(html)
+    print(current_task_id)
+    head = soup.find("div", class_="pbody")
     if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
         return None
-    text = soup.find("div", class_="probtext").get_text().replace("\u202f", " ").replace("\xa0", " ")
-    answer = soup.find("div", class_="solution").find_next_sibling().get_text()
-    solution = soup.find("div", {"class": "solution"}).get_text().replace("\u202f", " ").replace("\xa0", " ")
+    head_soup = BeautifulSoup(str(head), "html.parser")
+    while head_soup.div:
+        head_soup.div.unwrap()  # вручную убираем все тэги див, чтобы остались b и p
+    text = soup.find("div", class_="probtext")
+    text_soup = BeautifulSoup(str(text), "html.parser")
+    while text_soup.div:
+        text_soup.div.unwrap()  # вручную убираем все тэги див, чтобы остались b и p
+    answer = soup.find("div", class_="solution").find_next_sibling()
+    answer_soup = BeautifulSoup(str(answer), "html.parser")
+    while answer_soup.div and answer_soup.span:
+        answer_soup.div.unwrap()
+        answer_soup.span.unwrap()  # вручную убираем все тэги див, чтобы остались b и p
+    # solution = soup.find("div", {"class": "solution"}).get_text().replace("\u202f", " ").replace("\xa0", " ")
+    solution = soup.find("div", {"class": "solution"})
+    solution_soup = BeautifulSoup(str(solution), "html.parser")
+    while solution_soup.div and solution_soup.span:
+        solution_soup.div.unwrap()
+        solution_soup.span.unwrap()  # вручную убираем все тэги див, чтобы остались b и p
     content = {
-        "number": TaskNumber.example_number,
-        "head": head,
-        "text": text,
-        "answer": answer,  # нужно убрать слово "Ответ"
-        "solution": solution  # нужно убрать слово "Пояснение"
+        "id": current_task_id,
+        "head": head_soup,
+        "text": text_soup,
+        "answer": answer_soup,  # нужно убрать слово "Ответ"
+        "solution": solution_soup  # нужно убрать слово "Пояснение"
     }
     task_content.append(content)
     print(content)
@@ -130,14 +147,16 @@ def get_tasks(task_ids):
         TaskNumber.task_number += 1
         if TaskNumber.task_number == len(tasks_links):
             break  # принудительно останавливаем цикл, когда дошли до последнего задания
-    with open("russian_content.json", "w") as content_file:
+    # with open("russian_content.json", "w") as content_file:
+    #     json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
+    with open("russian_content_2.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
 
 def main():
-    get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
+    # get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
     TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по ним заново
-    # get_tasks(ids_f)
+    get_tasks(ids_f)
 
 
 if __name__ == "__main__":

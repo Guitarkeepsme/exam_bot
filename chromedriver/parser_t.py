@@ -1,22 +1,28 @@
-from sdamgia import SdamGIA
-# from aiogram import Bot, Dispatcher, executor, types
-# from aiogram.dispatcher.filters.state import State, StatesGroup
-# from aiogram.dispatcher.filters import Text
-# from aiogram.dispatcher import FSMContext
-# from aiogram.contrib.fsm_storage.memory import MemoryStorage
+import requests
+from bs4 import BeautifulSoup
 
 
-sdamgia = SdamGIA()
-subject = 'rus'
-request = 'задание 1'
+html = "<div class='answer' style='display:none'><span style='letter-spacing: 2px;'>Ответ: что</span></div>"
+
+soup = BeautifulSoup(html, "html.parser")
+while soup.div:
+    soup.div.unwrap()
+while soup.span:
+    soup.span.unwrap()
 
 
-# print(sdamgia.get_catalog(subject=subject))
-# # print(sdamgia.get_problem_by_id(subject=subject, id=7))
-# print(sdamgia.get_category_by_id(subject=subject, categoryid='354'))
-problem = sdamgia.get_problem_by_id(subject=subject, id='38799')
-result = {}
-result.update(problem.items())
-# print(problem.get('solution'))
-print(problem)
-# print(sdamgia.get_problem_by_id(subject=subject, id='38778').get('solution').get('text'))
+def getting_id(line):
+    number = ''
+    for char in line:
+        if char.isdigit():
+            number += char
+        else:
+            continue
+    return number
+
+
+print(getting_id("https://rus-ege.sdamgia.ru/problem?id=45326"))
+
+
+
+

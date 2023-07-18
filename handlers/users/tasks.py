@@ -1,34 +1,25 @@
 import logging
-import os
 from keyboards.inline.choise_buttons import choice
 from keyboards.inline.subjects.russian import rus_start, rus_task
 from keyboards.inline import callback_data
-from loader import dp, Forms, FSMContext
+from loader import dp, Forms, FSMContext, getting_answer
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message, CallbackQuery
-# from data.tasks_content import json_imports
+from data.tasks_content import json_imports
 from random import randint
-import json
-
 
 # РЕАЛИЗОВАТЬ СОСТОЯНИЯ, В ПЕРВУЮ ОЧЕРЕДЬ ДЛЯ ПРОХОДОВ ПО ВЫПОЛНЕНИЮ ЗАДАНИЙ
 # ПЕРЕПАРСИТЬ ЗАДАНИЯ, ДОБАВИВ АЙДИ, РАЗДЕЛИВ ВАРИАНТЫ ОТВЕТА И СДЕЛАВ ТАК, ЧТОБЫ В ТЕКСТЕ ЗАДАНИЯ НУЖНЫЕ ЭЛЕМЕНТЫ
 # БЫЛИ ВЫДЕЛЕНЫ ЛИБО ЖИРНЫМ ШРИФТОМ, ЛИБО КУРСИВОМ
 
 
-working_directory = os.getcwd()
-rus_path = working_directory + '/data/tasks_content/russian_content.json'
-
-with open(rus_path) as rus_data:
-    rus_content = json.load(rus_data)
-
-
 @dp.message_handler(Command('start'))
 async def show_options(message: Message):
+    await Forms.start.set()
     await message.answer(text="Для начала выберите предмет, к которому вы будете готовиться:", reply_markup=choice)
 
 
-@dp.callback_query_handler(text_contains="russian")
+@dp.callback_query_handler(text_contains="russian", state=Forms.start)
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data_russian = call.data
@@ -37,7 +28,7 @@ async def choosing_russian(call: CallbackQuery):
     await call.message.answer(text="Выберите дальнейшее действие", reply_markup=rus_start)
 
 
-@dp.callback_query_handler(text_contains="rus_tasks", state=rus_task)
+@dp.callback_query_handler(text_contains="rus_tasks", state=Forms.rus_task)
 async def russian_task_choosing(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data_rus_tasks = call.data
@@ -45,24 +36,39 @@ async def russian_task_choosing(call: CallbackQuery):
     await call.message.answer(text="Выберите *номер задания*", reply_markup=rus_task, parse_mode="Markdown")
 
 
-@dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"))
-async def russian_task(call: CallbackQuery, callback_data: dict):
+@dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"), state=Forms.rus_task)
+async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMContext):
     await call.answer(cache_time=60)
     logging.info(f"call = {callback_data}")
     number = callback_data.get("number")
-    all_tasks = (rus_content.get(str(number)))
+    all_tasks = (json_imports.rus_content.get(str(number)))
     random_task = all_tasks[randint(0, len(number))]
-    # async with
-    await call.message.answer(text=str(random_task.get("head")) + "\n\n" + str(random_task.get("text")))
-    # берём случайное задание из списка
+
+    async with state.proxy() as task:
+        task['russian'] = random_task  # сохраняем данные в машину состояний
+
+    await call.message.answer(text=str(random_task.get("head")) + "\n\n" + str(random_task.get("text")) +
+                              "\n\n\nЗапишите ответ *без пробелов*", parse_mode="Markdown")
 
 
-@dp.callback_query_handler(state=rus_task)
-async def russian_task_answer(call: CallbackQuery):
-    await call.answer(cache_time=60)
-    callback_data_russian_task_answer = call.data
-    logging.info(f"call = {callback_data_russian_task_answer}")
-    # await call.message.answer()
+@dp.message_handler(state=Forms.rus_task)
+async def russian_task_answer(message: Message, state: FSMContext):
+    async with state.proxy() as task:
+        answer = getting_answer(task['russian'].get('answer'))  # преобразуем варианты ответа в список
+        if message.text in answer:
+            await message.reply("Ответ верен!")
+        else:
+            await message.reply("Ваш ответ *" + message.text + "*\n\nПравильный ответ: " +
+                                str(task['russian'].get('answer')), parse_mode="Markdown")  # получаем ответ из ранее
+        # сохранённых данных
+
+
+# @dp.callback_query_handler(state=rus_task)
+# async def russian_task_answer(call: CallbackQuery):
+#     await call.answer(cache_time=60)
+#     callback_data_russian_task_answer = call.data
+#     logging.info(f"call = {callback_data_russian_task_answer}")
+#     # await call.message.answer()
 
 
 @dp.callback_query_handler(text_contains="math")
