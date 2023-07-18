@@ -6,7 +6,8 @@ from fake_useragent import UserAgent
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 from loader import getting_id
-
+import asyncio
+import aiohttp
 
 # ПОСЛЕ ДОЛГИХ МЫТАРСТВ РЕШИЛ СДЕЛАТЬ ПАРСИНГ ТАКИМ:
 # Сначала проходим по странице и парсим айдишники заданий, избегая повторов
@@ -18,8 +19,6 @@ from loader import getting_id
 
 with open("tasks_links_2.json") as links_file:  # открываем файл с ссылками
     tasks_links = json.load(links_file)
-
-
 with open("ids.json") as id_file:  # открываем файл с ссылками
     ids_f = json.load(id_file)
 
@@ -32,6 +31,16 @@ class TaskNumber:
 # переменные для всех функций
 ids = {}
 current_ids = []  # сохраняем айдишники конкретного задания, чтобы потом внести их в словарь
+
+
+def get_page_data():
+    pass
+
+
+def gather_data():
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+    pass
 
 
 def parse_id(html):
@@ -51,9 +60,12 @@ def parse_task(html):
     soup = BeautifulSoup(r.text, "lxml")
     TaskNumber.example_number += 1
     current_task_id = getting_id(html)
-    head = soup.find("div", class_="pbody", id_=True)
+    head = soup.find("div", class_="pbody")
+    if len(head) > 500:  # на случай если в заголовок попадёт теория по заданию
+        return None
     head_soup = BeautifulSoup(str(head), "html.parser")
-    print(head)
+    if head_soup.a:
+        return None
     while head_soup.div:
         head_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     text = soup.find("div", class_="probtext")
@@ -62,16 +74,14 @@ def parse_task(html):
         text_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     answer = soup.find("div", class_="solution").find_next_sibling()
     answer_soup = BeautifulSoup(str(answer), "html.parser")
-    while answer_soup.div:
-        answer_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
-    while answer_soup.span:
+    while answer_soup.div and answer_soup.span:
+        answer_soup.div.unwrap()
         answer_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     # solution = soup.find("div", {"class": "solution"}).get_text().replace("\u202f", " ").replace("\xa0", " ")
-    solution = soup.find("div", class_="solution")
+    solution = soup.find("div", {"class": "solution"})
     solution_soup = BeautifulSoup(str(solution), "html.parser")
-    while solution_soup.div:
+    while solution_soup.div and solution_soup.span:
         solution_soup.div.unwrap()
-    while solution_soup.span:
         solution_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     content = {
         "id": str(current_task_id),
@@ -89,7 +99,6 @@ def parse_task(html):
                                       .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
                                       .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
                                       .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
-                                      .replace("<p><b> (см. также Правило ниже). <b>", "")
     }
     # сделаю небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
     # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем это будет необходимо,
@@ -163,13 +172,13 @@ def get_tasks(task_ids):
             break  # принудительно останавливаем цикл, когда дошли до последнего задания
     # with open("russian_content.json", "w") as content_file:
     #     json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
-    with open("russian_content_task_8_test.json", "w") as content_file:
+    with open("russian_content_2.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
 
 def main():
     # get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
-    TaskNumber.task_number = 11  # обнуляем номер задания, чтобы пройтись по ним заново
+    TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по ним заново
     get_tasks(ids_f)
 
 
