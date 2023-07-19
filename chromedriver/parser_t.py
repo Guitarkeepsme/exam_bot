@@ -58,6 +58,19 @@ def getting_id(line):
 #     task_content.append(content)
 #     print(content)
 
+sample = "Я написал предложение. Тут есть - всякие ! символы"
 
 
+def escaping(string):
+    markdown_escapes = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    formatted_line = ''
+    for char in string:
+        if char in markdown_escapes:
+            formatted_line += "\\" + char
+        else:
+            formatted_line += char
+    return formatted_line
+
+
+print(escaping(sample))
 

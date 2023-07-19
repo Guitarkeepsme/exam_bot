@@ -51,13 +51,18 @@ def parse_task(html):
     soup = BeautifulSoup(r.text, "lxml")
     TaskNumber.example_number += 1
     current_task_id = getting_id(html)
-    head = soup.find("div", class_="pbody", id_=True)
+    head = soup.find("div", class_="pbody")
     head_soup = BeautifulSoup(str(head), "html.parser")
-    print(head)
+    while head_soup.span:
+        head_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while head_soup.div:
         head_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     text = soup.find("div", class_="probtext")
     text_soup = BeautifulSoup(str(text), "html.parser")
+    while text_soup.center:
+        text_soup.center.unwrap()
+    while text_soup.span:
+        text_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while text_soup.div:
         text_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     answer = soup.find("div", class_="solution").find_next_sibling()
@@ -77,19 +82,22 @@ def parse_task(html):
         "id": str(current_task_id),
         "head": str(head_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
                               .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                              .replace(" align=\"right\"", ""),
+                              .replace(" align=\"right\"", "").replace("</i>", "<i>")
+                              .replace("<!--auto generated from answers-->", "").replace("*", "\*"),
         "text": str(text_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
                               .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                              .replace(" align=\"right\"", ""),
+                              .replace(" align=\"right\"", "").replace("</i>", "<i>")
+                              .replace("<!--auto generated from answers-->", "").replace("*", "\*"),
         "answer": str(answer_soup).replace("Ответ: ", "").replace(" class=\"left_margin\"></p><b><!--rule_info--", "")
                                   .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                                  .replace("</p>", "")
-                                  .replace(" align=\"right\"", ""),
+                                  .replace("</p>", "").replace("<!--auto generated from answers-->", "")
+                                  .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("*", "\*"),
         "solution": str(solution_soup).replace("Пояснение", "").replace(" class=\"left_margin\"", "")
                                       .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
                                       .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
                                       .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
-                                      .replace("<p><b> (см. также Правило ниже). <b>", "")
+                                      .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
+                                      .replace("<!--auto generated from answers-->", "").replace("*", "\*")
     }
     # сделаю небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
     # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем это будет необходимо,

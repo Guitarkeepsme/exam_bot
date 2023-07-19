@@ -8,10 +8,11 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 class Forms(StatesGroup):
     start = State()
-    rus_task = State()
+    task = State()
+    task_answer = State()
 
 
-bot = Bot(token=config.API_TOKEN, parse_mode=types.ParseMode.HTML)
+bot = Bot(token=config.API_TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 
@@ -34,3 +35,18 @@ def getting_id(line):
         else:
             continue
     return number
+
+
+def escaping(string):
+    markdown_escapes = ['[', ']', '(', ')', '~', '`', '#', '+', '-', '=', '|', '{', '}', '.', '!', '_']
+    # исключил из списка символы >, _ и *, потому что они используются при "первичном" форматировании текстов
+    formatted_line = ''
+    for char in string:
+        if char in markdown_escapes:
+            formatted_line += "\\" + char
+        else:
+            formatted_line += char
+    return formatted_line
+
+
+replacements = "replace('<p>', '\n').replace('None', '').replace('<b>', '||').replace('<i>', '_')"
