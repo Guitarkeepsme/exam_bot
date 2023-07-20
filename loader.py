@@ -20,9 +20,9 @@ logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(
                     level=logging.INFO)
 
 
-def getting_answer(example):
+def getting_answers(example):
     if '|' not in example:
-        return example
+        return [example]
     else:
         return example.split("|")
 
@@ -38,7 +38,7 @@ def getting_id(line):
 
 
 def escaping(string):
-    markdown_escapes = ['[', ']', '(', ')', '~', '`', '#', '+', '-', '=', '|', '{', '}', '.', '!', '_']
+    markdown_escapes = ['[', ']', '(', ')', '~', '`', '#', '+', '-', '=', '|', '{', '}', '.', '!']
     # исключил из списка символы >, _ и *, потому что они используются при "первичном" форматировании текстов
     formatted_line = ''
     for char in string:

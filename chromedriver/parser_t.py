@@ -72,5 +72,11 @@ def escaping(string):
     return formatted_line
 
 
-print(escaping(sample))
+def getting_answer(example):
+    if '|' not in example:
+        return example
+    else:
+        return example.split("|")
 
+
+print(getting_answer("именно|какраз"))

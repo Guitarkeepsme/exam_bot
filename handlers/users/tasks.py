@@ -1,8 +1,8 @@
 import logging
 from keyboards.inline.choise_buttons import choice
-from keyboards.inline.subjects.russian import rus_start, rus_task
+from keyboards.inline.subjects import russian
 from keyboards.inline import callback_data
-from loader import dp, Forms, FSMContext, getting_answer, escaping
+from loader import dp, Forms, FSMContext, getting_answers, escaping
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message, CallbackQuery
 from data.tasks_content import json_imports
@@ -25,7 +25,7 @@ async def choosing_russian(call: CallbackQuery):
     callback_data_russian = call.data
     logging.info(f"call = {callback_data_russian}")
     await Forms.task.set()
-    await call.message.answer(text="Выберите дальнейшее действие", reply_markup=rus_start)
+    await call.message.answer(text="Хорошо\. Теперь выберите дальнейшее действие", reply_markup=russian.rus_start)
 
 
 @dp.callback_query_handler(text_contains="rus_tasks", state=Forms.task)
@@ -33,7 +33,7 @@ async def russian_task_choosing(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data_rus_tasks = call.data
     logging.info(f"call = {callback_data_rus_tasks}")
-    await call.message.answer(text="Выберите *номер задания*", reply_markup=rus_task)
+    await call.message.answer(text="Выберите *номер задания*", reply_markup=russian.rus_task)
 
 
 @dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"), state=Forms.task)
@@ -42,14 +42,11 @@ async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMConte
     logging.info(f"call = {callback_data}")
     number = callback_data.get("number")
     all_tasks = (json_imports.rus_content.get(number))
-    print(len(all_tasks))
     random_task = all_tasks[randint(0, len(all_tasks))]
-    print(random_task)
-    task_head = str(random_task.get("head")).replace("<p>", "\n").replace("None", "")\
-        .replace("<b>", "*").replace("<i>", "ITALICS")
-
-    task_text = str(random_task.get("text")).replace("<p>", "\n").replace("None", "")\
-        .replace("<b>", "*").replace("</i>", "ITALICS").replace("<i>", "ITALICS")
+    task_head = str(random_task.get("head")).replace("*", "\*").replace("<p>", "\n").replace("None", "")\
+        .replace("<b>", "*").replace("<i>", "_").replace("</i>", "_")
+    task_text = str(random_task.get("text")).replace("*", "\*").replace("<p>", "\n").replace("None", "")\
+        .replace("<b>", "*").replace("</i>", "_").replace("<i>", "_")
     async with state.proxy() as task:
         task['russian'] = random_task  # сохраняем данные в машину состояний
 
@@ -61,18 +58,20 @@ async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMConte
                               "\n\nЗапишите ответ *без пробелов*")
 
 
-@dp.message_handler(state=Forms.task_answer)
-async def russian_task_answer(message: Message, state: FSMContext):
+@dp.callback_query_handler(state=Forms.task_answer)
+async def russian_task_answer(message: Message, callback_query: CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        data["data_callback"] = callback_query.data
     async with state.proxy() as task:
-        answer = getting_answer(task['russian'].get('answer'))  # преобразуем варианты ответа в список
-        if message.text.lower() in answer:
-            await message.reply("Ответ верен\!")
+        answer = task['russian'].get('answer')
+        answers = getting_answers(answer)  # преобразуем варианты ответа в список
+        if message.text.lower() in answers:
+            await message.reply("Ответ верен\!\n\n\nВыберете другое задание или продолжите отрабатывать это?",
+                                reply_markup=russian.correct_answer_options)
             await Forms.task.set()
         else:
             await message.reply("Ваш ответ *" + message.text + "*\n\nПравильный ответ: " + "||" +
-                                str(task['russian'].get('answer')) + "||", parse_mode="MarkdownV2")
-            # по какой-то причине пришлось прописать парсмод, иначе возвращало ошибку
-            # получаем ответ из ранее сохранённых данных
+                                str(answers) + "||")  # а если это несколько слов, то надо дать всё
 
 
 # @dp.callback_query_handler(state=rus_task)

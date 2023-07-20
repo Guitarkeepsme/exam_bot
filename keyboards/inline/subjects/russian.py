@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from keyboards.inline.callback_data import russian_main_callback, rus_task_callback
-
+from loader import dp, Forms, FSMContext, getting_answers, escaping
 
 rus_start = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -50,3 +50,21 @@ rus_task.add(task_1, task_2, task_3, task_4, task_5, task_6, task_7, task_8, tas
 rus_task.row(task_21, task_22, task_23)
 rus_task.row(task_24, task_25, task_26)
 rus_task.add(task_27)
+
+correct_answer_options = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Продолжить отработку задания", callback_data='choose:rus_tasks')
+        ],
+        [
+            InlineKeyboardButton(text="Выбрать другое задание", callback_data='choose:rus_tasks')
+        ],
+        [
+            InlineKeyboardButton(text="Посмотреть статистику по этому предмету", callback_data='choose:rus_stats')
+        ],
+        [
+            InlineKeyboardButton(text="Вернуться в начало", callback_data='start')
+        ]
+
+    ]
+)

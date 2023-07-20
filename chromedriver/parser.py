@@ -45,59 +45,94 @@ def parse_id(html):
 task_content = []  # собираем контент всех примеров конкретного задания
 all_tasks_content = {}  # собираем все задания в один словарь, чтобы потом сохранить его
 
+#  ПОКА НЕ ЗНАЮ, ЧТО ДЕЛАТЬ С ТАБЛИЦАМИ И КАК ИХ ПРЕОБРАЗОВЫВАТЬ В ТЕКСТ ПРИ ПАРСИНГЕ
+
 
 def parse_task(html):
     r = requests.get(html)
     soup = BeautifulSoup(r.text, "lxml")
     TaskNumber.example_number += 1
     current_task_id = getting_id(html)
-    head = soup.find("div", class_="pbody")
-    head_soup = BeautifulSoup(str(head), "html.parser")
-    while head_soup.span:
-        head_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
-    while head_soup.div:
-        head_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
+    divs = soup.find_all('div', class_='pbody')  # на некоторых страницах встречаются скрытые куски (как их назвать?)
+    # с теорией по заданию и прочим мусором по тому же тэгу с тем же классом, но без id. Поэтому пришлось поиском
+    # отсортировать их так, чтобы они парсились только при наличии id
+    head_list = []
+    for div in divs:
+        if div.has_attr('id'):
+            head_soup = BeautifulSoup(str(div), "html.parser")
+            while head_soup.table:
+                head_soup.table.unwrap()
+                head_soup.tr.unwrap()
+            while head_soup.tr:
+                head_soup.tr.unwrap()
+            while head_soup.span:
+                head_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
+            while head_soup.div:
+                head_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
+            head_list.append(head_soup)  # возвращаем в виде списка (костыль, ну и ладно)
+            break
+
+        else:
+            continue
+    head_str = ''
+    for el in head_list:      # преобразуем список в строку
+        head_str += str(el)
     text = soup.find("div", class_="probtext")
     text_soup = BeautifulSoup(str(text), "html.parser")
     while text_soup.center:
         text_soup.center.unwrap()
+    while text_soup.br:
+        text_soup.br.unwrap()
+    while text_soup.tr:
+        text_soup.tr.unwrap()
     while text_soup.span:
         text_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while text_soup.div:
         text_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     answer = soup.find("div", class_="solution").find_next_sibling()
     answer_soup = BeautifulSoup(str(answer), "html.parser")
+    while answer_soup.br:
+        answer_soup.br.unwrap()
+    while answer_soup.tr:
+        answer_soup.tr.unwrap()
     while answer_soup.div:
         answer_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while answer_soup.span:
         answer_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
-    # solution = soup.find("div", {"class": "solution"}).get_text().replace("\u202f", " ").replace("\xa0", " ")
     solution = soup.find("div", class_="solution")
     solution_soup = BeautifulSoup(str(solution), "html.parser")
+    while solution_soup.br:
+        solution_soup.br.unwrap()
+    while solution_soup.tr:
+        solution_soup.tr.unwrap()
     while solution_soup.div:
         solution_soup.div.unwrap()
     while solution_soup.span:
         solution_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     content = {
         "id": str(current_task_id),
-        "head": str(head_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
+        "head": str(head_str).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
                               .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                              .replace(" align=\"right\"", "").replace("</i>", "<i>")
-                              .replace("<!--auto generated from answers-->", "").replace("*", "\*"),
+                              .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("-", "\-")
+                              .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
         "text": str(text_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
-                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
                               .replace(" align=\"right\"", "").replace("</i>", "<i>")
-                              .replace("<!--auto generated from answers-->", "").replace("*", "\*"),
+                              .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
         "answer": str(answer_soup).replace("Ответ: ", "").replace(" class=\"left_margin\"></p><b><!--rule_info--", "")
-                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
                                   .replace("</p>", "").replace("<!--auto generated from answers-->", "")
-                                  .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("*", "\*"),
-        "solution": str(solution_soup).replace("Пояснение", "").replace(" class=\"left_margin\"", "")
-                                      .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
-                                      .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                                      .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
-                                      .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
-                                      .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+                                  .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("*", "\*")
+        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
+        # "solution": str(solution_soup).replace("Пояснение", "").replace(" class=\"left_margin\"", "")
+        #                               .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
+        #                               .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+        #                               .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
+        #                               .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
+        #                               .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+        #     .replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
     }
     # сделаю небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
     # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем это будет необходимо,
@@ -165,19 +200,19 @@ def get_tasks(task_ids):
             parse_task(url_base + str(task_id))
         all_tasks_content.update({TaskNumber.task_number: tuple(task_content)})
         task_content.clear()  # очищаем всё, что собрали по предыдущему заданию, чтобы это не шло на следующее
-        print(all_tasks_content)
+        # print(all_tasks_content)
         TaskNumber.task_number += 1
         if TaskNumber.task_number == len(tasks_links):
             break  # принудительно останавливаем цикл, когда дошли до последнего задания
     # with open("russian_content.json", "w") as content_file:
     #     json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
-    with open("russian_content_task_8_test.json", "w") as content_file:
+    with open("russian_content_T8.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
 
 def main():
     # get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
-    TaskNumber.task_number = 11  # обнуляем номер задания, чтобы пройтись по ним заново
+    TaskNumber.task_number = 8  # обнуляем номер задания, чтобы пройтись по ним заново
     get_tasks(ids_f)
 
 
