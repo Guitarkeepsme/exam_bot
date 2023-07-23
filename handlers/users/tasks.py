@@ -13,22 +13,20 @@ from random import randint
 # БЫЛИ ВЫДЕЛЕНЫ ЛИБО ЖИРНЫМ ШРИФТОМ, ЛИБО КУРСИВОМ
 
 
-@dp.message_handler(Command('start'), state='*')
+@dp.message_handler(Command('start'))
 async def show_options(message: Message):
-    await Forms.start.set()
     await message.answer(text="Для начала выберите предмет, к которому вы будете готовиться:", reply_markup=choice)
 
 
-@dp.callback_query_handler(text_contains="russian", state=Forms.start)
+@dp.callback_query_handler(text_contains="russian")
 async def choosing_russian(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data_russian = call.data
     logging.info(f"call = {callback_data_russian}")
-    await Forms.task.set()
     await call.message.answer(text="Хорошо\. Теперь выберите дальнейшее действие", reply_markup=russian.rus_start)
 
 
-@dp.callback_query_handler(text_contains="rus_tasks", state=Forms.task)
+@dp.callback_query_handler(text_contains="rus_tasks")
 async def russian_task_choosing(call: CallbackQuery):
     await call.answer(cache_time=60)
     callback_data_rus_tasks = call.data
@@ -36,7 +34,7 @@ async def russian_task_choosing(call: CallbackQuery):
     await call.message.answer(text="Выберите *номер задания*", reply_markup=russian.rus_task)
 
 
-@dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"), state=Forms.task)
+@dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"))
 async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMContext):
     await call.answer(cache_time=60)
     logging.info(f"call = {callback_data}")
@@ -49,29 +47,26 @@ async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMConte
         .replace("<b>", "*").replace("</i>", "_").replace("<i>", "_")
     async with state.proxy() as task:
         task['russian'] = random_task  # сохраняем данные в машину состояний
-
-    await Forms.task_answer.set()
     await call.message.answer(text="__Задание " + str(number) + "__"
                               + escaping(task_head) + "\n" +
                               escaping(task_text) +  # функция escaping нужна для того,
                               # чтобы экранировать зарезервированные парсмодом символы
                               "\n\nЗапишите ответ *без пробелов*")
+    await Forms.task.set()  # переходим в состояние задания
 
 
-@dp.callback_query_handler(state=Forms.task_answer)
-async def russian_task_answer(message: Message, callback_query: CallbackQuery, state: FSMContext):
-    async with state.proxy() as data:
-        data["data_callback"] = callback_query.data
+@dp.message_handler(lambda message: message.text, state=Forms.task)
+async def russian_task_answer(message: Message, state: FSMContext):
     async with state.proxy() as task:
         answer = task['russian'].get('answer')
         answers = getting_answers(answer)  # преобразуем варианты ответа в список
         if message.text.lower() in answers:
+            await dp.storage.reset_state(user=message.from_user.id)  # обнуляем состояние
             await message.reply("Ответ верен\!\n\n\nВыберете другое задание или продолжите отрабатывать это?",
                                 reply_markup=russian.correct_answer_options)
-            await Forms.task.set()
         else:
             await message.reply("Ваш ответ *" + message.text + "*\n\nПравильный ответ: " + "||" +
-                                str(answers) + "||")  # а если это несколько слов, то надо дать всё
+                                str(answers) + "||")  # а если ответ неверен, оставляем прежнее состояние
 
 
 # @dp.callback_query_handler(state=rus_task)
