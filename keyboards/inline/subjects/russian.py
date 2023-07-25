@@ -13,6 +13,9 @@ rus_start = InlineKeyboardMarkup(
         ],
         [
             InlineKeyboardButton(text="Посмотреть статистику по этому предмету", callback_data='choose:rus_stats')
+        ],
+        [
+            InlineKeyboardButton(text="Назад к списку предметов", callback_data='choose:to_subjects')
         ]
     ]
 )
@@ -54,7 +57,8 @@ rus_task.add(task_27)
 correct_answer_options = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="Продолжить отработку задания", callback_data='choose:rus_tasks')
+            InlineKeyboardButton(text="Продолжить отработку задания",
+                                 callback_data='another_task')
         ],
         [
             InlineKeyboardButton(text="Выбрать другое задание", callback_data='choose:rus_tasks')
@@ -63,7 +67,7 @@ correct_answer_options = InlineKeyboardMarkup(
             InlineKeyboardButton(text="Посмотреть статистику по этому предмету", callback_data='choose:rus_stats')
         ],
         [
-            InlineKeyboardButton(text="Вернуться в начало", callback_data='start')
+            InlineKeyboardButton(text="Вернуться в начало", callback_data='choose:start')
         ]
 
     ]

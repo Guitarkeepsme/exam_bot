@@ -10,6 +10,7 @@ class Forms(StatesGroup):
     start = State()
     task = State()
     task_answer = State()
+    personal_account = State()
 
 
 bot = Bot(token=config.API_TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)

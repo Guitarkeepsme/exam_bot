@@ -16,11 +16,11 @@ from loader import getting_id
 # может быть, сначала загрузить в файл айдишники, а потом уже парсить информацию?
 
 
-with open("tasks_links_2.json") as links_file:  # открываем файл с ссылками
+with open("tasks_links_2.json") as links_file:  # открываем файл со ссылками
     tasks_links = json.load(links_file)
 
 
-with open("ids.json") as id_file:  # открываем файл с ссылками
+with open("ids.json") as id_file:  # открываем файл со ссылками
     ids_f = json.load(id_file)
 
 
@@ -53,7 +53,8 @@ def parse_task(html):
     soup = BeautifulSoup(r.text, "lxml")
     TaskNumber.example_number += 1
     current_task_id = getting_id(html)
-    divs = soup.find_all('div', class_='pbody')  # на некоторых страницах встречаются скрытые куски (как их назвать?)
+    divs = soup.find_all('div', class_='pbody')
+    # На некоторых страницах встречаются скрытые куски (как их назвать?)
     # с теорией по заданию и прочим мусором по тому же тэгу с тем же классом, но без id. Поэтому пришлось поиском
     # отсортировать их так, чтобы они парсились только при наличии id
     head_list = []
@@ -81,30 +82,18 @@ def parse_task(html):
     text_soup = BeautifulSoup(str(text), "html.parser")
     while text_soup.center:
         text_soup.center.unwrap()
-    while text_soup.br:
-        text_soup.br.unwrap()
-    while text_soup.tr:
-        text_soup.tr.unwrap()
     while text_soup.span:
         text_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while text_soup.div:
         text_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     answer = soup.find("div", class_="solution").find_next_sibling()
     answer_soup = BeautifulSoup(str(answer), "html.parser")
-    while answer_soup.br:
-        answer_soup.br.unwrap()
-    while answer_soup.tr:
-        answer_soup.tr.unwrap()
     while answer_soup.div:
         answer_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while answer_soup.span:
         answer_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     solution = soup.find("div", class_="solution")
     solution_soup = BeautifulSoup(str(solution), "html.parser")
-    while solution_soup.br:
-        solution_soup.br.unwrap()
-    while solution_soup.tr:
-        solution_soup.tr.unwrap()
     while solution_soup.div:
         solution_soup.div.unwrap()
     while solution_soup.span:
@@ -112,29 +101,30 @@ def parse_task(html):
     content = {
         "id": str(current_task_id),
         "head": str(head_str).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
-                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                              .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("-", "\-")
-                              .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+        .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+        .replace(" align=\"right\"", "").replace("</i>", "<i>")
+        .replace("<!--auto generated from answers-->", "").replace("*", "\*")
         .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
         "text": str(text_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
-                              .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
-                              .replace(" align=\"right\"", "").replace("</i>", "<i>")
-                              .replace("<!--auto generated from answers-->", "").replace("*", "\*")
-        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
+        .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
+        .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("&lt;...&gt", "\<...\>")
+        .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+        .replace("<!--np-->", "").replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
+        .replace("<b>Прочитайте текст и выполните задания 1−3.<b>", ""),  # для задания 1 по русскому языку
         "answer": str(answer_soup).replace("Ответ: ", "").replace(" class=\"left_margin\"></p><b><!--rule_info--", "")
-                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
+                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
                                   .replace("</p>", "").replace("<!--auto generated from answers-->", "")
                                   .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("*", "\*")
         .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
-        # "solution": str(solution_soup).replace("Пояснение", "").replace(" class=\"left_margin\"", "")
-        #                               .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
-        #                               .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-        #                               .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
-        #                               .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
-        #                               .replace("<!--auto generated from answers-->", "").replace("*", "\*")
-        #     .replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
+        "solution": str(solution_soup).replace("Пояснение.", "").replace(" class=\"left_margin\"", "")
+                                      .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
+                                      .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
+                                      .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
+                                      .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
+                                      .replace("<!--auto generated from answers-->", "").replace("*", "\*")
+            .replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
     }
-    # сделаю небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
+    # Небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
     # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем это будет необходимо,
     # чтобы форматировать сообщения, отправляемые ботом.
     task_content.append(content)
