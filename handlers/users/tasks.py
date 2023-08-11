@@ -10,9 +10,6 @@ from data.tasks_content import json_imports
 from random import randint
 from config import connection
 from filters import bot_messages
-# РЕАЛИЗОВАТЬ СОСТОЯНИЯ, В ПЕРВУЮ ОЧЕРЕДЬ ДЛЯ ПРОХОДОВ ПО ВЫПОЛНЕНИЮ ЗАДАНИЙ
-# ПЕРЕПАРСИТЬ ЗАДАНИЯ, ДОБАВИВ АЙДИ, РАЗДЕЛИВ ВАРИАНТЫ ОТВЕТА И СДЕЛАВ ТАК, ЧТОБЫ В ТЕКСТЕ ЗАДАНИЯ НУЖНЫЕ ЭЛЕМЕНТЫ
-# БЫЛИ ВЫДЕЛЕНЫ ЛИБО ЖИРНЫМ ШРИФТОМ, ЛИБО КУРСИВОМ
 
 
 # Сохраняю прогресс каждого пользователя (в дальнейшем на это будет работать база данных)
@@ -50,6 +47,7 @@ async def choosing_russian(call: CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text_contains="rus_tasks", state='*')
 async def russian_task_choosing(call: CallbackQuery, state: FSMContext):
+    await state.finish()  # завершаем все состояния, если они были
     await call.answer(cache_time=60)
     callback_data_rus_tasks = call.data
     logging.info(f"call = {callback_data_rus_tasks}")
@@ -58,6 +56,8 @@ async def russian_task_choosing(call: CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"))
 async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMContext):
+    back_button = InlineKeyboardMarkup()
+    back_button.add(InlineKeyboardButton('Назад', callback_data='rus_tasks'))
     await call.answer(cache_time=60)
     logging.info(f"call = {callback_data}")
     number = callback_data.get("number")
@@ -87,7 +87,7 @@ async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMConte
                               + escaping(task_head) + "\n" +
                               escaping(task_text) +  # функция escaping нужна для того,
                               # чтобы экранировать зарезервированные парсмодом символы
-                              "\n\nЗапишите ответ *без пробелов*")
+                              "\n\nЗапишите ответ *без пробелов*", reply_markup=back_button)
     await Forms.task.set()  # переходим в состояние задания
 
 
@@ -270,9 +270,6 @@ async def stats(call: CallbackQuery):
 @dp.callback_query_handler(callback_data.personal_account_callback.filter(subject='russian_stats'))
 async def personal_account_subject(call: CallbackQuery, callback_data: dict):
     await Forms.personal_account.set()  # переходим в состояние личного кабинета
-    back_buttons = InlineKeyboardMarkup()
-    back_buttons.add(InlineKeyboardButton('К работе над предметом', callback_data='russian_options'))
-    back_buttons.add(InlineKeyboardButton('Назад в меню', callback_data='menu'))
     await call.answer(cache_time=60)
     callback_data_stats = call.data
     logging.info(f"call = {callback_data_stats}")
@@ -300,7 +297,20 @@ async def personal_account_subject(call: CallbackQuery, callback_data: dict):
                               + "*\nИз них решены правильно: *" + str(total_true) + "*\nДопущено ошибок: *"
                               + str(total_false) + "*\n\n\nЕсли вам нужна информация по конкретному заданию, "
                                                    "напишите его номер в ответном сообщении\.",
-                              reply_markup=back_buttons)
+                              reply_markup=personal_buttons.back_buttons)
+
+
+@dp.message_handler(lambda message: message.text, state=Forms.personal_account)
+async def problem_stats(message: Message):
+    await message.answer("Эта функция ещё в разработке, ждите\.", reply_markup=personal_buttons.back_buttons)
 # @dp.callback_query_handler(text="back")
 # async def getting_back(message: Message):
 #     await message.answer("Хорошо, начнём сначала. Выберите предмет:", reply_markup=choice)
+
+
+@dp.callback_query_handler(callback_data.russian_main_callback.filter(option='rus_test'), state='*')
+async def russian_test(call: CallbackQuery, state: FSMContext):
+    back_button = InlineKeyboardMarkup()
+    back_button.add(InlineKeyboardButton('Назад', callback_data='russian_options'))
+    await state.finish()
+    await call.message.answer("Эта функция ещё в разработке, ждите\.", reply_markup=back_button)

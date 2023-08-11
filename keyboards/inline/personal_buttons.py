@@ -29,3 +29,7 @@ personal_account = InlineKeyboardMarkup(
         ]
     ]
 )
+
+back_buttons = InlineKeyboardMarkup()
+back_buttons.add(InlineKeyboardButton('К работе над предметом', callback_data='russian_options'))
+back_buttons.add(InlineKeyboardButton('Назад в меню', callback_data='menu'))
