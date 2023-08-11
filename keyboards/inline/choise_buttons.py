@@ -4,7 +4,7 @@ from .callback_data import subject_callback
 choice = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text='Русский язык', callback_data=subject_callback.new(subject='russian')),
+            InlineKeyboardButton(text='Русский язык', callback_data=subject_callback.new(subject='russian_options')),
             InlineKeyboardButton(text='Математика', callback_data="choose:math"),
         ],
         [

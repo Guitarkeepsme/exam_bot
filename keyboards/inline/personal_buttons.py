@@ -3,7 +3,8 @@ from .callback_data import personal_account_callback
 personal_account = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text='Русский язык', callback_data=personal_account_callback.new(subject='russian')),
+            InlineKeyboardButton(text='Русский язык',
+                                 callback_data=personal_account_callback.new(subject='russian_stats')),
             InlineKeyboardButton(text='Математика', callback_data="math"),
         ],
         [
@@ -24,7 +25,7 @@ personal_account = InlineKeyboardMarkup(
         ],
         [
             InlineKeyboardButton(text='География', callback_data="geography"),
-            InlineKeyboardButton(text='Назад в меню', callback_data="to_subjects")
+            InlineKeyboardButton(text='Назад в меню', callback_data="menu")
         ]
     ]
 )

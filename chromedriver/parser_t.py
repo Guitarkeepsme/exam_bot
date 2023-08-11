@@ -1,53 +1,38 @@
-import requests
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-from random import randint
+from selenium.webdriver.chrome.service import Service
+import json
+# Set up Chrome WebDriver
+service = Service(ChromeDriverManager(version="114.0.5735.90").install())
+options = webdriver.ChromeOptions()
 
-html = "<div class='answer' style='display:none'><span style='letter-spacing: 2px;'>Ответ: что</span></div>"
+driver = webdriver.Chrome(options=options, service=service)
 
-soup = BeautifulSoup(html, "html.parser")
-while soup.div:
-    soup.div.unwrap()
-while soup.span:
-    soup.span.unwrap()
-
-
-def getting_id(line):
-    number = ''
-    for char in line:
-        if char.isdigit():
-            number += char
-        else:
-            continue
-    return number
+# Load the webpage
+url = 'https://rus-ege.sdamgia.ru/prob-catalog'
+driver.get(url)
 
 
-sample = "Я написал предложение. Тут есть - всякие ! символы"
+# Get the page source
+page_source = driver.page_source
+
+links_list = []
+# Create a BeautifulSoup object with the page source
+soup = BeautifulSoup(page_source, 'html.parser')
+task_number = 1  # для ключей словаря
+for i, task in enumerate(soup.find_all("div", class_="Theme nobg"), start=1):
+    task_link = task.find("a", class_="Theme-link").get('href')
+    links_list.append((i, task_link))
+print(links_list)
+links = {}
+for link in links_list:
+    if len(links) == 27:
+        break
+    links.update([link])
+with open("russian_links_2907.json", "w") as file:
+    json.dump(links, file, indent=4, ensure_ascii=False)
 
 
-def escaping(string):
-    markdown_escapes = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
-    formatted_line = ''
-    for char in string:
-        if char in markdown_escapes:
-            formatted_line += "\\" + char
-        else:
-            formatted_line += char
-    return formatted_line
-
-
-def getting_answer(example):
-    if '|' not in example:
-        return example
-    else:
-        return example.split("|")
-
-
-def t_list(t_list):
-    result = []
-    for number in t_list:
-        result.append(t_list[number] - 2)
-    return result
-
-
-print(t_list([1, 2, 3, 4, 5]))
-
+# Close the WebDriver
+driver.quit()

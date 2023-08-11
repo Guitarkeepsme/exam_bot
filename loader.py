@@ -1,8 +1,7 @@
 import logging
 from aiogram import Bot, Dispatcher, types
-import config
+from config import API_TOKEN, host, user, password, db_name
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 
@@ -13,7 +12,7 @@ class Forms(StatesGroup):
     personal_account = State()
 
 
-bot = Bot(token=config.API_TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
+bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.MARKDOWN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 
@@ -50,4 +49,3 @@ def escaping(string):
     return formatted_line
 
 
-replacements = "replace('<p>', '\n').replace('None', '').replace('<b>', '||').replace('<i>', '_')"

@@ -1,146 +1,98 @@
-import random
-from aiogram import Bot, types
-from aiogram.dispatcher import Dispatcher
+import logging
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Command, Text
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import executor
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Create a bot instance
-bot = Bot(token='5887333260:AAFRvXOC60DQEPmkU1bVyl3teFJp2S7paW0')
-dispatcher = Dispatcher(bot)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
-# Define the available subjects, task types, and tasks
-SUBJECTS = ['Mathematics', 'Physics']
-TASK_TYPES = ['Type 1', 'Type 2', 'Type 3']
-TASKS_PER_TYPE = 20
+# Initialize the bot and dispatcher
+bot = Bot(token="5887333260:AAFRvXOC60DQEPmkU1bVyl3teFJp2S7paW0")
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
-tasks = {
-    'Mathematics': {
-        'Type 1': [f'Math Task 1-{i}' for i in range(1, TASKS_PER_TYPE + 1)],
-        'Type 2': [f'Math Task 2-{i}' for i in range(1, TASKS_PER_TYPE + 1)],
-        'Type 3': [f'Math Task 3-{i}' for i in range(1, TASKS_PER_TYPE + 1)]
-    },
-    'Physics': {
-        'Type 1': [f'Physics Task 1-{i}' for i in range(1, TASKS_PER_TYPE + 1)],
-        'Type 2': [f'Physics Task 2-{i}' for i in range(1, TASKS_PER_TYPE + 1)],
-        'Type 3': [f'Physics Task 3-{i}' for i in range(1, TASKS_PER_TYPE + 1)]
-    }
-}
+# Define the states
+class MenuStates(StatesGroup):
+    MAIN_MENU = State()
+    SUB_MENU = State()
 
-# Store the current subject, task type, and task index for each user
-user_data = {}
+# Handler for the /start command
+@dp.message_handler(Command("start"))
+async def cmd_start(message: types.Message):
+    # Set the initial state
+    await MenuStates.MAIN_MENU.set()
 
+    # Display the main menu
+    await message.answer("Main Menu", reply_markup=get_main_menu_markup())
 
-@dispatcher.message_handler(commands=['start'])
-async def start(message: types.Message):
-    # Clear the user's task progress
-    user_data.pop(message.chat.id, None)
+# Handler for the main menu buttons
+@dp.callback_query_handler(Text(equals=["option1", "option2", "option3"]), state=MenuStates.MAIN_MENU)
+async def process_main_menu(callback_query: types.CallbackQuery, state: FSMContext):
+    # Get the selected option
+    option = callback_query.data
 
-    # Create the inline keyboard for subject selection
-    keyboard = InlineKeyboardMarkup(row_width=2)
-    for subject in SUBJECTS:
-        callback_data = f'subject:{subject}'
-        keyboard.add(InlineKeyboardButton(subject, callback_data=callback_data))
+    # Save the selected option in the state
+    await state.update_data(selected_option=option)
 
-    await message.reply('Select a subject:', reply_markup=keyboard)
+    # Move to the sub menu state
+    await MenuStates.SUB_MENU.set()
 
+    # Display the sub menu
+    await callback_query.message.edit_text("Sub Menu", reply_markup=get_sub_menu_markup())
 
-@dispatcher.callback_query_handler(lambda query: query.data.startswith('subject:'))
-async def select_subject(callback_query: types.CallbackQuery):
-    # Extract the selected subject from the callback data
-    subject = callback_query.data.split(':')[1]
+# Handler for the sub menu buttons
+@dp.callback_query_handler(Text(equals=["sub_option1", "sub_option2"]), state=MenuStates.SUB_MENU)
+async def process_sub_menu(callback_query: types.CallbackQuery, state: FSMContext):
+    # Get the selected sub option
+    sub_option = callback_query.data
 
-    # Store the selected subject for the user
-    user_data[callback_query.from_user.id] = {'subject': subject, 'type': None, 'task_index': None}
+    # Get the selected main option from the state
+    data = await state.get_data()
+    main_option = data.get("selected_option")
 
-    # Send the task type selection
-    await send_task_type_selection(callback_query.from_user.id)
+    # Handle the selected options
+    await callback_query.answer(f"You selected {main_option} -> {sub_option}")
 
+    # Move back to the main menu state
+    await MenuStates.MAIN_MENU.set()
 
-@dispatcher.callback_query_handler(lambda query: query.data.startswith('task_type:'))
-async def select_task_type(callback_query: types.CallbackQuery):
-    chat_id = callback_query.from_user.id
+    # Display the main menu
+    await callback_query.message.edit_text("Main Menu", reply_markup=get_main_menu_markup())
 
-    # Extract the selected task type from the callback data
-    task_type = callback_query.data.split(':')[1]
+# Handler for the "back" button
+@dp.callback_query_handler(Text(equals=["back"]), state="*")
+async def process_back(callback_query: types.CallbackQuery, state: FSMContext):
+    # Move back to the previous state
+    async with state.proxy() as data:
+        previous_state = data.get("previous_state")
+        if previous_state:
+            await previous_state.set()
+            await callback_query.message.edit_text("Back to previous menu")
 
-    # Store the selected task type for the user
-    user_data[chat_id]['type'] = task_type
+# Helper function to get the main menu markup
+def get_main_menu_markup():
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton("Option 1", callback_data="option1"),
+        InlineKeyboardButton("Option 2", callback_data="option2"),
+        InlineKeyboardButton("Option 3", callback_data="option3"),
+    )
+    return markup
 
-    # Send the first task
-    await send_task(chat_id)
+# Helper function to get the sub menu markup
+def get_sub_menu_markup():
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton("Sub Option 1", callback_data="sub_option1"),
+        InlineKeyboardButton("Sub Option 2", callback_data="sub_option2"),
+        InlineKeyboardButton("Back", callback_data="back"),
+    )
+    return markup
 
-
-@dispatcher.message_handler(lambda message: message.text.startswith('Task'))
-async def check_answer(message: types.Message):
-    chat_id = message.chat.id
-
-    # Get the user's current task
-    current_task = user_data.get(chat_id)
-    if not current_task:
-        await message.reply('Please select a subject and task type first.')
-        return
-
-    # Get the subject, task type, and task index
-    subject = current_task['subject']
-    task_type = current_task['type']
-    task_index = current_task['task_index']
-
-    # Check the user's answer
-    if message.text == tasks[subject][task_type][task_index]:
-        await message.reply('Correct answer!')
-    else:
-        await message.reply('Wrong answer. Try again.')
-        return
-
-    # Send the next task
-    await send_task(chat_id)
-
-
-@dispatcher.callback_query_handler(lambda query: query.data == 'back_to_subject')
-async def go_back_to_subject(callback_query: types.CallbackQuery):
-    chat_id = callback_query.from_user.id
-
-    # Clear the user's current task and type
-    user_data.pop(chat_id, None)
-
-    # Send the subject selection keyboard again
-    keyboard = InlineKeyboardMarkup(row_width=2)
-    for subject in SUBJECTS:
-        callback_data = f'subject:{subject}'
-        keyboard.add(InlineKeyboardButton(subject, callback_data=callback_data))
-
-    await bot.send_message(chat_id, 'Select a subject:', reply_markup=keyboard)
-
-
-async def send_task_type_selection(chat_id):
-    # Create the inline keyboard for task type selection
-    keyboard = InlineKeyboardMarkup(row_width=2)
-    for task_type in TASK_TYPES:
-        callback_data = f'task_type:{task_type}'
-        keyboard.add(InlineKeyboardButton(task_type, callback_data=callback_data))
-
-    await bot.send_message(chat_id, 'Select a task type:', reply_markup=keyboard)
-
-
-async def send_task(chat_id):
-    # Get the user's current task
-    current_task = user_data.get(chat_id)
-    if not current_task:
-        return
-
-    # Get the subject, task type, and task index
-    subject = current_task['subject']
-    task_type = current_task['type']
-    task_index = current_task['task_index']
-
-    # Generate a new task index if not set
-    if task_index is None:
-        task_index = random.randint(0, TASKS_PER_TYPE - 1)
-        user_data[chat_id]['task_index'] = task_index
-
-    # Send the task
-    await bot.send_message(chat_id, tasks[subject][task_type][task_index])
-
-
-if __name__ == '__main__':
-    executor.start_polling(dispatcher)
+# Start the bot
+if __name__ == "__main__":
+    executor.start_polling(dp, skip_updates=True)
