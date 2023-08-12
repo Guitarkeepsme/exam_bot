@@ -1,5 +1,4 @@
 import random
-
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -7,7 +6,7 @@ from selenium import webdriver
 from fake_useragent import UserAgent
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-from loader import getting_id
+from loader import getting_id, formatted
 
 
 # ПОСЛЕ ДОЛГИХ МЫТАРСТВ РЕШИЛ СДЕЛАТЬ ПАРСИНГ ТАКИМ:
@@ -20,7 +19,7 @@ from loader import getting_id
 
 with open("russian_links_2907.json") as links_file:  # открываем файл со ссылками
     tasks_links = json.load(links_file)
-
+print(len(tasks_links))
 
 with open("ids_rus_290723.json") as id_file:  # открываем файл с айдишниками
     ids_f = json.load(id_file)
@@ -59,8 +58,6 @@ def parse_id(html):
     for this_id in all_ids:
         if this_id not in rubbish_ids:
             current_ids.append(this_id)
-    print(len(rubbish_ids))
-    print(len(current_ids))
 
 
 task_content = []  # собираем контент всех примеров конкретного задания
@@ -72,12 +69,11 @@ all_tasks_content = {}  # собираем все задания в один с�
 def parse_task(html):
     r = requests.get(html)
     soup = BeautifulSoup(r.text, "lxml")
-    print(TaskNumber.example_number)
     TaskNumber.example_number += 1
-    print(TaskNumber.example_number)
+    # print("Номер " + str(TaskNumber.example_number))
     current_task_id = getting_id(html)
     divs = soup.find_all('div', class_='pbody')
-    print(current_task_id)
+    # print(current_task_id)
     # На некоторых страницах встречаются скрытые куски (как их назвать?)
     # с теорией по заданию и прочим мусором по тому же тэгу с тем же классом, но без id. Поэтому пришлось поиском
     # отсортировать их так, чтобы они парсились только при наличии id
@@ -88,6 +84,8 @@ def parse_task(html):
             while head_soup.table:
                 head_soup.table.unwrap()
                 head_soup.tr.unwrap()
+            while head_soup.center:
+                head_soup.center.unwrap()
             while head_soup.tr:
                 head_soup.tr.unwrap()
             while head_soup.span:
@@ -99,7 +97,6 @@ def parse_task(html):
         else:
             continue
     head_str = ''
-    print(head_str)
     for el in head_list:      # преобразуем список в строку
         head_str += str(el)
 
@@ -126,40 +123,25 @@ def parse_task(html):
     while solution_soup.div:
         solution_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while solution_soup.span:
-        solution_soup.span.clear()  # под этим тэгом идёт ответ, который нам не нужен
-    print(solution_soup)
+        solution_soup.span.decompose()  # под этим тэгом идёт ответ, который нам не нужен
+    while solution_soup.table:
+        solution_soup.table.decompose()
+    while solution_soup.td:
+        solution_soup.td.decompose()
+    # while solution_soup.td:
+    #     pass
     content = {
         "id": str(current_task_id),
-        "head": str(head_str).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
-        .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-        .replace(" align=\"right\"", "").replace("</i>", "<i>")
-        .replace("<!--auto generated from answers-->", "").replace("*", "\*")
-        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
-        "text": str(text_soup).replace(" class=\"left_margin\"", "").replace("<p >", "<p>").replace("</p>", "")
-        .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ").replace("-", "\-")
-        .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("&lt;...&gt", "\<...\>")
-        .replace("<!--auto generated from answers-->", "").replace("*", "\*")
-        .replace("<!--np-->", "").replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
-        .replace("<b>Прочитайте текст и выполните задания 1−3.<b>", ""),  # для задания 1 по русскому языку
-        "answer": str(answer_soup).replace("Ответ: ", "").replace(" class=\"left_margin\"></p><b><!--rule_info--", "")
-                                  .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                                  .replace("</p>", "").replace("<!--auto generated from answers-->", "")
-                                  .replace(" align=\"right\"", "").replace("</i>", "<i>").replace("*", "\*")
-        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", ""),
-        "solution": str(solution_soup).replace("Пояснение.", "").replace(" class=\"left_margin\"", "")
-                                      .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("</p>", "")
-                                      .replace("</b>", "<b>").replace("\u202f", " ").replace("\xa0", " ")
-                                      .replace("<!--rule_info-->", "").replace(" align=\"right\"", "")
-                                      .replace("<p><b> (см. также Правило ниже). <b>", "").replace("</i>", "<i>")
-                                      .replace("<!--auto generated from answers-->", "").replace("*", "\*")
-        .replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")
-        .replace("<b>Пояснение (см. также Правило ниже). <b>", "")
+        "head": formatted(head_str),
+        "text": formatted(str(text_soup)),
+        "answer": formatted(str(answer_soup)),
+        "solution": formatted(str(solution_soup))
     }
     # Небольшое пояснение: я воспользовался методом unwrap и последующим replace, чтобы убрать ненужные мне тэги
     # и метки, но при этом оставить те, что отвечают за преобразование текста. В дальнейшем это будет необходимо,
     # чтобы форматировать сообщения, отправляемые ботом.
     task_content.append(content)
-    # print(content)
+    print(content)
 
 
 def get_source_html(url):
@@ -225,18 +207,18 @@ def get_ids(links):
 def get_tasks(task_ids):
     url_base = "https://rus-ege.sdamgia.ru/problem?id="
     while TaskNumber.task_number <= len(tasks_links):
+        print("Задание № " + str(TaskNumber.task_number))
         for task_id in task_ids.get(str(TaskNumber.task_number)):
-            print("Задание № " + str(TaskNumber.task_number))
             parse_task(url_base + str(task_id))
         all_tasks_content.update({TaskNumber.task_number: tuple(task_content)})
         task_content.clear()  # очищаем всё, что собрали по предыдущему заданию, чтобы это не шло на следующее
         # print(all_tasks_content)
         TaskNumber.task_number += 1
-        if TaskNumber.task_number == len(tasks_links):
-            break  # принудительно останавливаем цикл, когда дошли до последнего задания
+        if TaskNumber.task_number == len(tasks_links) + 1:
+            break  # останавливаем цикл, когда прошли все задания
     # with open("russian_content.json", "w") as content_file:
     #     json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
-    with open("rus_content_310723.json", "w") as content_file:
+    with open("rus_content_120823.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
 

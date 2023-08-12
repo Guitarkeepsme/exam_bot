@@ -314,3 +314,12 @@ async def russian_test(call: CallbackQuery, state: FSMContext):
     back_button.add(InlineKeyboardButton('Назад', callback_data='russian_options'))
     await state.finish()
     await call.message.answer("Эта функция ещё в разработке, ждите\.", reply_markup=back_button)
+
+
+# Код для того, чтобы разбивать большие сообщения на маленькие:
+
+# if len(info) > 4096:
+#     for x in range(0, len(info), 4096):
+#         bot.send_message(message.chat.id, info[x:x+4096])
+# else:
+#     bot.send_message(message.chat.id, info)
