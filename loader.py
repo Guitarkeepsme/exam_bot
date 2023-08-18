@@ -12,7 +12,7 @@ class Forms(StatesGroup):
     personal_account = State()
 
 
-bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.MARKDOWN)
+bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 
@@ -38,7 +38,7 @@ def getting_id(line):
 
 
 def escaping(string):
-    markdown_escapes = ['[', ']', '(', ')', '~', '`', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    markdown_escapes = ['[', ']', '(', ')', '~', '`', '#', '+', '-', '=', '|', '{', '}', '.', '!', ">", "*"]
     # исключил из списка символы >, _ и *, потому что они используются при "первичном" форматировании текстов
     formatted_line = ''
     for char in string:
@@ -49,15 +49,6 @@ def escaping(string):
     return formatted_line
 
 
-rus_task_8_rubbish = "<br/><br/><td style=\"text-align:center;width:45px\">А</td>" \
-    "<td style=\"text-align:center;width:45px\">Б</td><td " \
-    "style=\"text-align:center;width:45px\">В</td><td style=\"text-align:" \
-    "center;width:45px\">Г</td><td style=\"text-align"\
-    ":center;width:45px\">Д</td><td style=\"height:14px\"> </td>" \
-    "<td style=\"height:14px\"> </td><td style=\"height:14px\">"\
-    " </td><td style=\"height:14px\"> </td><td style=\"height:14px\"> </td>"
-
-
 def formatted(string):
     return string.replace(" class=\"left_margin\"", "").replace("<p >", "\n").replace("</p>", "") \
         .replace("<p>", "\n").replace("</b>", "BOLD").replace("<b>", "BOLD").replace("\u202f", " ") \
@@ -65,13 +56,23 @@ def formatted(string):
         .replace("<!--auto generated from answers-->", "")\
         .replace("<!--auto generated from answers-->", "").replace("<!--...-->", "")\
         .replace(" <p><span style=\"letter-spacing: 2px;\">", "")\
-        .replace(" class=\"left_margin\"", "").replace(" align=\"right\"", "").replace("&lt;...&gt", "\<...\>")\
+        .replace(" class=\"left_margin\"", "").replace(" align=\"right\"", "").replace("&lt;...&gt", "<...>")\
         .replace("<!--np-->", "").replace("<b>Прочитайте текст и выполните задания 1−3.<b>", "").replace("Ответ: ", "")\
         .replace(" class=\"left_margin\"></p><b><!--rule_info--", "")\
         .replace(" align=\"right\"", "").replace(" class=\"left_margin\"", "")\
         .replace(" class=\"left_margin\"></p><b><!--rule_info--", "").replace("<!--rule_info-->", "")\
         .replace("<p><b> (см. также Правило ниже). <b>", "").replace("<b>Пояснение (см. также Правило ниже). <b>", "")\
-        .replace('<br/><br/>', '').replace("</td>", "")\
+        .replace('<br/><br/>', '').replace("</td>", "").replace("&lt;", "").replace("b&gt;", "BOLD")\
         .replace('style="text-align:center;width:45px"', '').replace('style="height:14px"', '')\
         .replace("<td >A<td >Б<td >В<td >Г<td >Д<td > <td > <td > <td > <td >", "А Б В Г Д")\
-        .replace("Приведём верное соответствие : ", "")
+        .replace("<td >A<td >Б<td >В<td >Г<td > <td > <td > <td >", "А Б В Г")\
+        .replace("Приведём верное соответствие : ", "").replace("<td style=\"margin:auto;border:0", "")\
+        .replace("&amp;nbsp", " ")
+
+
+def parse_modding(string):
+    return string.replace("<p>", "\n").replace("BOLD", "*").replace("ITAL", "_") \
+        .replace("<td style=\"margin:auto;border:0", "").replace("None", "").replace(" style=\"text-align:right\"", "")\
+        .replace("<td \>A<td \>Б<td \>В<td \>Г<td \> <td \> <td \> <td \>", "А Б В Г").replace("<!-- --", "") \
+        .replace("&amp;nbsp", " ").replace("<td >", "").replace("<!--", ""). replace("-->", "")\
+        # .replace("<td", "").replace(">", "")

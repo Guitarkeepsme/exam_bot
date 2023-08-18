@@ -2,7 +2,7 @@ import logging
 from keyboards.inline.choise_buttons import choice
 from keyboards.inline.subjects import russian
 from keyboards.inline import callback_data, personal_buttons
-from loader import dp, Forms, getting_answers, escaping
+from loader import dp, Forms, getting_answers, escaping, parse_modding
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -10,10 +10,6 @@ from data.tasks_content import json_imports
 from random import randint
 from config import connection
 from filters import bot_messages
-
-
-# Сохраняю прогресс каждого пользователя (в дальнейшем на это будет работать база данных)
-user_data = {}
 
 
 @dp.message_handler(Command('start'))
@@ -30,9 +26,9 @@ async def show_options(call: CallbackQuery, state: FSMContext):
     await state.finish()  # завершаем все состояния, если они были
     print(call.from_user.id)
     # включаем базу данных и добавляем id
-    # with connection.cursor() as cursor:
-    #     cursor.execute('INSERT INTO users (id) VALUES (%s) ON CONFLICT (id) DO NOTHING', (message.from_user.id,))
-        # connection.commit()
+    with connection.cursor() as cursor:
+        cursor.execute('INSERT INTO users (id) VALUES (%s) ON CONFLICT (id) DO NOTHING', (call.from_user.id,))
+        connection.commit()
     await call.message.answer(text="Выберите предмет, к которому вы будете готовиться:", reply_markup=choice)
 
 
@@ -56,6 +52,7 @@ async def russian_task_choosing(call: CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(callback_data.rus_task_callback.filter(task="rus_task"))
 async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMContext):
+    await state.finish()  # завершаем состояние, если оно было
     back_button = InlineKeyboardMarkup()
     back_button.add(InlineKeyboardButton('Назад', callback_data='rus_tasks'))
     await call.answer(cache_time=60)
@@ -65,30 +62,31 @@ async def russian_task(call: CallbackQuery, callback_data: dict, state: FSMConte
     solved = []
     with connection.cursor() as cursor:
         cursor.execute('SELECT problem_id FROM actions WHERE user_id = (%s) AND is_solved = true', (call.from_user.id,))
-        solved.extend(cursor.fetchall()[0])
+        cursor.fetchall()
+        if cursor.fetchall():
+            solved.extend(cursor.fetchall()[0])
         connection.commit()
     random_task = all_tasks[randint(0, len(all_tasks) - 1)]
     # Проверяем, не попалось ли решённое задание снова
     while random_task in solved:
         random_task = all_tasks[randint(0, len(all_tasks) - 1)]
-    task_head = str(random_task.get("head")).replace("*", "\*").replace("<p>", "\n").replace("None", "")\
-        .replace("<b>", "*").replace("<i>", "_").replace("</i>", "_").replace("-", "\-").replace(">", "\>")\
-        .replace("<br/\>", "").replace("<td style\=\"text\\\\-align:center;width:45px\"\\>", "").replace("</td\>", "")\
-        .replace("<td style\=\"height:14px\"\>", "")  # временная заглушка для 8 задания, потом поменяю
-    task_text = str(random_task.get("text")).replace("*", "\*").replace("<p>", "\n").replace("None", "")\
-        .replace("<b>", "*").replace("</i>", "_").replace("<i>", "_").replace("-", "\-").replace(">", "\>")
+    task_head = escaping(str(random_task.get("head")))
+    task_text = escaping(str(random_task.get("text")))
     async with state.proxy() as task:
         task['subject'] = 'russian'
         task['solution'] = random_task.get('solution')
         task['number'] = int(number)  # сохраняем номер задания, чтобы пользователь мог отработать другие примеры
         task['task'] = random_task  # сохраняем все данные в машину состояний
-        # task['task_id'] = random_task.get('id')  # добавляем id этого задания, чтобы оно не выпало снова
-    await call.message.answer(text="__Задание " + str(escaping(number)).replace('*', '!!!') + "__"
-                              + escaping(task_head) + "\n" +
-                              escaping(task_text) +  # функция escaping нужна для того,
-                              # чтобы экранировать зарезервированные парсмодом символы
-                              "\n\nЗапишите ответ *без пробелов*", reply_markup=back_button)
+    await call.message.answer(text="__Задание " + str(number) + "__" + parse_modding(task_head))
+    await call.message.answer(text=parse_modding(task_text))
+    await call.message.answer(text="\n\nЗапишите ответ *без пробелов*", reply_markup=back_button)
     await Forms.task.set()  # переходим в состояние задания
+
+    # "__Задание " + str(escaping(number)) + "__"
+    # + escaping(task_head) + "\n" +
+    # escaping(task_text) +  # функция escaping нужна для того,
+    # # чтобы экранировать зарезервированные парсмодом символы
+    # "\n\nЗапишите ответ *без пробелов*"
 
 
 @dp.message_handler(lambda message: message.text, state=Forms.task)
@@ -106,7 +104,7 @@ async def task_answer(message: Message, state: FSMContext):
                 cursor.execute('INSERT INTO actions (problem_id, user_id, subject, number, is_solved) '
                                'VALUES ((%s), (%s), (%s), (%s), true)', (task_id, message.from_user.id, subject, num))
                 connection.commit()
-            await state.finish()  # завершаем состояние
+            # await state.finish()  # завершаем состояние
             await message.reply("Ответ верен\!\n\n\nВыберете другое задание или продолжите отрабатывать это?",
                                 reply_markup=russian.correct_answer_options)
         else:
@@ -131,24 +129,8 @@ async def another_task(call: CallbackQuery, state: FSMContext):
 async def get_solution(call: CallbackQuery, state: FSMContext):
     async with state.proxy() as task:
         solution = task['solution']
-    solution_parsed = str(solution).replace("*", "\*").replace("<p>", "\n").replace("None", "")\
-        .replace("<b>", "*").replace("<i>", "_").replace("</i>", "_").replace(".", "\.").replace("|", "\|")\
-        .replace(')', '\)').replace("=", "\=")
-    await call.message.answer(solution_parsed)
-
-
-# @dp.message_handler(text_contains='to_subjects', state='*')
-# async def to_subjects(message: Message, state: FSMContext):
-#     await state.finish()  # завершаем все состояния, если они были
-#     print(message.from_user.id)
-#     # включаем базу данных и добавляем id
-#     # with connection.cursor() as cursor:
-#     #     cursor.execute('INSERT INTO users (id) VALUES (%s) ON CONFLICT (id) DO NOTHING', (message.from_user.id,))
-#     # connection.commit()
-#     await message.answer(text="Приветствую, *"
-#                               + message.from_user.first_name + "*\! 👋\n"
-#                                                       "Для начала выберите предмет, к которому вы будете готовиться:",
-#                          reply_markup=choice)
+    solution_parsed = escaping(str(solution))
+    await call.message.answer(parse_modding(solution_parsed))
 
 
 @dp.callback_query_handler(text_contains="math")
@@ -268,12 +250,14 @@ async def stats(call: CallbackQuery):
 # ,
 #                            state=Forms.personal_account
 @dp.callback_query_handler(callback_data.personal_account_callback.filter(subject='russian_stats'))
-async def personal_account_subject(call: CallbackQuery, callback_data: dict):
+async def personal_account_subject(call: CallbackQuery, callback_data: dict, state: FSMContext):
     await Forms.personal_account.set()  # переходим в состояние личного кабинета
     await call.answer(cache_time=60)
     callback_data_stats = call.data
     logging.info(f"call = {callback_data_stats}")
     subject = callback_data.get('subject').replace('_stats', '')
+    async with state.proxy() as info:
+        info['subject'] = subject
     total_amount = 0  # считаем, сколько всего задач решил пользователь
     total_true = 0
     total_false = 0
@@ -300,12 +284,41 @@ async def personal_account_subject(call: CallbackQuery, callback_data: dict):
                               reply_markup=personal_buttons.back_buttons)
 
 
-@dp.message_handler(lambda message: message.text, state=Forms.personal_account)
-async def problem_stats(message: Message):
-    await message.answer("Эта функция ещё в разработке, ждите\.", reply_markup=personal_buttons.back_buttons)
-# @dp.callback_query_handler(text="back")
-# async def getting_back(message: Message):
-#     await message.answer("Хорошо, начнём сначала. Выберите предмет:", reply_markup=choice)
+@dp.message_handler(state=Forms.personal_account)
+async def problem_stats(message: Message, state: FSMContext):
+    if message.text.isdigit():
+        async with state.proxy() as info:
+            subject = info['subject']
+            false = 0
+            true = 0
+            total = 0
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT COUNT (problem_id) FROM actions WHERE user_id = (%s)'
+                               'AND is_solved = false AND subject = (%s) AND number = (%s)',
+                               (message.from_user.id, subject, int(message.text)))
+                current_false = cursor.fetchall()[0][0]
+                false += current_false
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT COUNT (problem_id) FROM actions WHERE user_id = (%s)'
+                               'AND is_solved = true AND subject = (%s) AND number = (%s)',
+                               (message.from_user.id, subject, int(message.text)))
+                current_true = cursor.fetchall()[0][0]
+                true += current_true
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT COUNT (problem_id) FROM actions WHERE user_id = (%s) '
+                               'AND subject = (%s) AND number = (%s)',
+                               (message.from_user.id, subject, int(message.text)))
+                current_total = cursor.fetchall()[0][0]
+                total += current_total
+            if total == 0:
+                await message.answer("Вы ещё *не приступали* к этому заданию или такого задания *не существует*\."
+                                     , reply_markup=personal_buttons.back_buttons)
+            else:
+                await message.answer("__Ваша статистика по этому заданию__\n\n\nВсего примеров: *" + str(total)
+                                     + "*\nИз них решены правильно: *" + str(true) + "*\nДопущено ошибок: *"
+                                     + str(false) + "*", reply_markup=personal_buttons.back_buttons)
+    else:
+        await message.answer("Введите номер задания, пожалуйста\.")
 
 
 @dp.callback_query_handler(callback_data.russian_main_callback.filter(option='rus_test'), state='*')
@@ -315,11 +328,3 @@ async def russian_test(call: CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.answer("Эта функция ещё в разработке, ждите\.", reply_markup=back_button)
 
-
-# Код для того, чтобы разбивать большие сообщения на маленькие:
-
-# if len(info) > 4096:
-#     for x in range(0, len(info), 4096):
-#         bot.send_message(message.chat.id, info[x:x+4096])
-# else:
-#     bot.send_message(message.chat.id, info)

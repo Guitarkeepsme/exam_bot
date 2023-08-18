@@ -108,8 +108,10 @@ def parse_task(html):
         text_soup.span.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while text_soup.div:
         text_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
-    answer = soup.find("div", class_="solution").find_next_sibling()
+    while text_soup.a:
+        text_soup.a.decompose()
 
+    answer = soup.find("div", class_="solution").find_next_sibling()
     answer_soup = BeautifulSoup(str(answer), "html.parser")
     while answer_soup.div:
         answer_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
@@ -124,6 +126,8 @@ def parse_task(html):
         solution_soup.div.unwrap()  # вручную убираем все ненужные тэги, чтобы остались b, i и p
     while solution_soup.span:
         solution_soup.span.decompose()  # под этим тэгом идёт ответ, который нам не нужен
+    while solution_soup.a:
+        solution_soup.a.decompose()
     while solution_soup.table:
         solution_soup.table.decompose()
     while solution_soup.td:
@@ -206,7 +210,7 @@ def get_ids(links):
 
 def get_tasks(task_ids):
     url_base = "https://rus-ege.sdamgia.ru/problem?id="
-    while TaskNumber.task_number <= len(tasks_links):
+    while TaskNumber.task_number <= len(tasks_links) + 1:
         print("Задание № " + str(TaskNumber.task_number))
         for task_id in task_ids.get(str(TaskNumber.task_number)):
             parse_task(url_base + str(task_id))
@@ -218,7 +222,7 @@ def get_tasks(task_ids):
             break  # останавливаем цикл, когда прошли все задания
     # with open("russian_content.json", "w") as content_file:
     #     json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
-    with open("rus_content_120823.json", "w") as content_file:
+    with open("rus_content_140823.json", "w") as content_file:
         json.dump(all_tasks_content, content_file, indent=4, ensure_ascii=False)
 
 
