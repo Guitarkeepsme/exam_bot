@@ -21,7 +21,7 @@ with open("russian_links_2907.json") as links_file:  # открываем фай
     tasks_links = json.load(links_file)
 print(len(tasks_links))
 
-with open("ids_rus_290723.json") as id_file:  # открываем файл с айдишниками
+with open("ids_mathb_180823.json") as id_file:  # открываем файл с айдишниками
     ids_f = json.load(id_file)
 
 
@@ -186,7 +186,7 @@ def get_source_html(url):
 def get_ids(links):
     id_iteration_count = len(links)
     print(f"Всего заданий: {id_iteration_count}")
-    url_base = "https://rus-ege.sdamgia.ru"
+    url_base = "https://mathb-ege.sdamgia.ru"
     for link in links.values():
         parse_id(url_base + link)
 
@@ -204,7 +204,7 @@ def get_ids(links):
         current_ids.clear()  # очищаем список, чтобы айдишники предыдущего задания не попали в следующее
         TaskNumber.task_number += 1  # переходим к следующему заданию
     print("Все ссылки на задания собраны!")
-    with open("ids_rus_290723.json", "w") as ids_file:
+    with open("ids_mathb_180823.json", "w") as ids_file:
         json.dump(ids, ids_file, indent=4, ensure_ascii=False)
 
 
@@ -227,9 +227,9 @@ def get_tasks(task_ids):
 
 
 def main():
-    # get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
+    get_ids(tasks_links)  # сначала получаем айдишники всех заданий и сохраняем их
     TaskNumber.task_number = 1  # обнуляем номер задания, чтобы пройтись по примерам задания заново
-    get_tasks(ids_f)
+    # get_tasks(ids_f)
 
 
 if __name__ == "__main__":

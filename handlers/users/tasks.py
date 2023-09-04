@@ -24,7 +24,6 @@ async def begin(message: Message):
 @dp.callback_query_handler(text='menu', state='*')
 async def show_options(call: CallbackQuery, state: FSMContext):
     await state.finish()  # завершаем все состояния, если они были
-    print(call.from_user.id)
     # включаем базу данных и добавляем id
     with connection.cursor() as cursor:
         cursor.execute('INSERT INTO users (id) VALUES (%s) ON CONFLICT (id) DO NOTHING', (call.from_user.id,))

@@ -1,36 +1,34 @@
 import json
 
 from bs4 import BeautifulSoup
-# from selenium import webdriver
-# from fake_useragent import UserAgent
-# from webdriver_manager.chrome import ChromeDriverManager
-# from selenium.webdriver.common.by import By
+from selenium import webdriver
+from fake_useragent import UserAgent
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
-# url = "https://rus-ege.sdamgia.ru"
+url = "https://mathb-ege.sdamgia.ru/prob-catalog"
 
-# user_agent = UserAgent()
-# options = webdriver.ChromeOptions()
+user_agent = UserAgent()
+service = Service()
+options = webdriver.ChromeOptions()
 # options.add_argument(f"user-agent={user_agent.random}")
 # options.add_argument('--ignore-certificate-errors')
 # options.add_argument('--incognito')
 # options.add_argument('--headless')
 # options.add_argument('--disable-blink-features=AutomationControlled')
-# driver = webdriver.Chrome(
-# ChromeDriverManager().install(), options=options)
-#     executable_path="/Users/alexeykashurnikov/PycharmProjects/exam_bot/chromedriver/chromedriver",
-#     options=options
-# )
-# driver.get(url)
-# html = driver.page_source
+driver = webdriver.Chrome(ChromeDriverManager(version="114.0.5735.90").install(), service=service, options=options)
+driver.get(url)
+html = driver.page_source
 
 
 # with open('links_page.html', 'w') as file:
 #     file.write(html)
 
-
-with open('links_page.html') as file:
-    src = file.read()
-soup = BeautifulSoup(src, "lxml")
+soup = BeautifulSoup(html, "html")
+print(soup)
+# with open('links_page.html') as file:
+#     src = file.read()
+# soup = BeautifulSoup(src, "lxml")
 
 all_titles = {}
 number = 0
